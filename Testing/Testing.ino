@@ -8,6 +8,12 @@
 #define DHTTYPE DHT11
 #define LED 5
 
+#define FIREBASE_HOST ""
+#define FIREBASE_AUTH ""
+
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+
 
 FirebaseData fData;
 FirebaseJson json;
