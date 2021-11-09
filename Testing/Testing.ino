@@ -14,7 +14,6 @@
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
 
-
 FirebaseData fData;
 FirebaseJson json;
 
@@ -43,11 +42,19 @@ void setup() {
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   size_t start_time = millis();
-  while (WiFi.status() != WL_CONNECTED)
+  size_t connection_time = millis();
+  while (WiFi.status() != WL_CONNECTED) {
     if (millis() - start_time > 500) {
       Serial.print(".");
       start_time = millis();
     }
+    if (millis() - connection_time > 3000) {
+      Serial.println("Connection aborted");
+      while (true);
+    }
+  }
+
+
 
   Serial.println("Connessione");
   Serial.println();
@@ -127,7 +134,7 @@ void loop() {
       digitalWrite(LED, LOW);
     }
     Serial.print("\n");
-    
+
     json.set("/value", score);
     Firebase.updateNode(fData, "/score", json);
     updateTime = millis();
