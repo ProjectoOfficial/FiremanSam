@@ -43,6 +43,7 @@ class ErrorCodes:
     NO_DATA = 0x09
     
 
+
 class packet_t:
     '''this class defines the Oscup's packet and method for managing it'''
 
@@ -62,6 +63,7 @@ class packet_t:
         self.buff_TX = None
         self.buff_RX = None
 
+
     def reset(self):
         '''
         @brief resets all the class attributes
@@ -75,6 +77,7 @@ class packet_t:
 
         self.buff_TX = None
         self.buff_RX = None
+
 
     def pack(self, command: int, length: int, payload: bytearray):
         '''
@@ -94,6 +97,7 @@ class packet_t:
             self.crc = self.computeCRC(self.buff_TX)
             self.buff_TX.extend(self.encodeInteger(self.crc, 2))
 
+
     def __updateBuff(self):
         '''
         @brief updates the values inside the TX buffer
@@ -105,12 +109,14 @@ class packet_t:
         if self.crc != None:
             self.buff_TX.extend(self.encodeInteger(self.crc, 2))
 
+
     def setBuff(self, data: bytearray):
         '''
         @brief assings the read data to the RX buffer
         '''
-        self.buff_RX = bytearray()
+        self.buff_RX = bytearray([])
         self.buff_RX.extend(data)
+
 
     def unpack(self):
         '''
@@ -118,9 +124,6 @@ class packet_t:
         
         @param len it is the lenght of the received buffer
         '''
-        if self.buff_RX == None or self.buff_RX == bytearray([]):
-            return
-
         if self.buff_RX[2] < 5:
             return
 
@@ -131,11 +134,13 @@ class packet_t:
             self.payload[i] = self.buff_RX[i + 3]
         self.crc = (self.buff_RX[self.length + 4] << 8) | self.buff_RX[self.length + 3]
 
+
     def getcrc(self):
         '''
         @brief returns the crc of the current packet
         '''
         return self.crc
+
 
     def getBuff(self):
         '''
@@ -144,11 +149,13 @@ class packet_t:
         self.__updateBuff()
         return self.buff_TX
 
+
     def getParams(self):
         '''
         @brief an all in one return which provides all the data about the packet
         '''
         return self.id, self.command, self.length, self.payload, self.crc
+
 
     @staticmethod
     def computeCRC(array: bytearray):
@@ -175,6 +182,7 @@ class packet_t:
                     crc >>= 1
         return crc
 
+
     @staticmethod
     def encodeInteger(value: int, length: int):
         '''
@@ -185,22 +193,21 @@ class packet_t:
 
         @return the converted bytearray
         '''
-
         data = bytearray(length)
 
-        if length == 1:
+        if (length == 1):
             data[0] = value & 0xFF
 
-        if length == 2:
+        if (length == 2):
             data[0] = value & 0xFF
             data[1] = (value >> 8) & 0xFF
 
-        if length == 3:
+        if (length == 3):
             data[0] = value & 0xFF
             data[1] = (value >> 8) & 0xFF
             data[2] = (value >> 16) & 0xFF
 
-        if length == 4:
+        if (length == 4):
             data[0] = value & 0xFF
             data[1] = (value >> 8) & 0xFF
             data[2] = (value >> 16) & 0xFF
@@ -224,6 +231,7 @@ class Oscup:
         self.baudrate = baudrate
         self.intr_alloc_flags = 0
         self.serialWriter = serial.Serial(port=com_port, baudrate=baudrate, timeout=0, write_timeout=0)
+
 
     def write(self, command: int, length: int, payload: bytearray):
         '''
@@ -275,17 +283,19 @@ class Oscup:
                     data = b''
                     break
         
-        if RX.getcrc() != packet_t.computeCRC(bytearray(last_buff[:len(last_buff) - 2])):
+        if RX.getcrc() != packet_t.computeCRC(last_buff[:len(last_buff) - 2]):
             return ErrorCodes.CRC_ERROR
 
         return ErrorCodes.OK
 
+            
     def get_timer(self):
         '''
         @brief returns a millisecond counter
         '''
 
         return time.time_ns() // 1_000_000
+    
 
     def read(self):
         '''
@@ -305,20 +315,21 @@ class Oscup:
             else:
                 if data != b'':
                     try:
+                        packetRX.setBuff(data)
+                        packetRX.unpack()
                         actualcrc = data[len(data)-2:]
+                        if packetRX.getcrc() == None:
+                            return ErrorCodes.NO_DATA, packetRX
 
-                        data_without_crc = bytearray(data[:len(data) - 2])
-                        crc = packet_t.encodeInteger(packet_t.computeCRC(data_without_crc), 2) 
-
-                        if crc == actualcrc:
+                        if(packetRX.getcrc() == actualcrc):
                             dummybuff = bytearray([0, 0, 0, 0, 0])
                             packetTX.pack(RxCommands.ACK, 5, dummybuff) 
-                            self.write(packetTX.command, packetTX.length, packetTX.getBuff())
+                            self.serialWriter.write(packetTX.getBuff())
                             break
                         else:
                             dummybuff = bytearray([0, 0, 0, 0, 0])
                             packetTX.pack(RxCommands.NACK, 5, dummybuff) 
-                            self.write(packetTX.command, packetTX.length, packetTX.getBuff())
+                            self.serialWriter.write(packetTX.getBuff())
                             return ErrorCodes.CRC_ERROR, packetRX
                     except:
                         pass
@@ -327,11 +338,9 @@ class Oscup:
                 else:
                     dummybuff = bytearray([0, 0, 0, 0, 0])
                     packetTX.pack(RxCommands.NACK, 5, dummybuff) 
-                    self.write(packetTX.command, packetTX.length, packetTX.getBuff())
+                    self.serialWriter.write(packetTX.getBuff())
                     return ErrorCodes.NO_DATA, packetRX
         
-        packetRX.setBuff(data)
-        packetRX.unpack()
         return ErrorCodes.OK, packetRX
 
 
