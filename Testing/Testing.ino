@@ -4,9 +4,9 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
-#define DHTPIN 23
+#define DHTPIN 15
 #define DHTTYPE DHT11
-#define LED 5
+#define LED 16
 
 #define FIREBASE_HOST ""
 #define FIREBASE_AUTH ""
@@ -112,31 +112,33 @@ void co2_and_tvoc(int *co2, int *tvoc) {
 void loop() {
   if (millis() - updateTime > 500) {
     float humidity, temperature ;
-    int co2, tvoc;
+    int co2 = 0, tvoc = 0;
     humidity_and_temperature(&humidity, &temperature);
     co2_and_tvoc(&co2, &tvoc);
 
-    float datas[] = {humidity, temperature, co2, tvoc};
-    float score = 0;
-    for (int i = 0; i < 4; i++) {
-      score += (datas[i] - means[i]) / devs[i] * weights[i];
-    }
-    score += bias;
-    Serial.print("Score: ");
-    Serial.print(score);
+    if (co2 != 0) {
+      float datas[] = {humidity, temperature, co2, tvoc};
+      float score = 0;
+      for (int i = 0; i < 4; i++) {
+        score += (datas[i] - means[i]) / devs[i] * weights[i];
+      }
+      score += bias;
+      Serial.print("Score: ");
+      Serial.print(score);
 
-    if (score > 0) {
-      Serial.println("\nFire detected!");
-      digitalWrite(LED, HIGH);
-    }
-    else {
-      Serial.println("\nNothing");
-      digitalWrite(LED, LOW);
-    }
-    Serial.print("\n");
+      if (score > 0) {
+        Serial.println("\nFire detected!");
+        digitalWrite(LED, HIGH);
+      }
+      else {
+        Serial.println("\nNothing");
+        digitalWrite(LED, LOW);
+      }
+      Serial.print("\n");
 
-    json.set("/value", score);
-    Firebase.updateNode(fData, "/score", json);
-    updateTime = millis();
+      json.set("/value", score);
+      Firebase.updateNode(fData, "/score", json);
+      updateTime = millis();
+    }
   }
 }
