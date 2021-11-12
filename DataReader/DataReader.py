@@ -10,7 +10,7 @@ baudrate = 115200
 port = "COM3"
 oscup = Oscup(id, baudrate, port)
 
-csv_header = ['temperature', 'humidity', 'CO2', 'TVOC', 'fire']
+csv_header = ["umidità" "temperatura" "co2" "tvoc" "classe"]
 date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
 
 def cleaner(s):
@@ -53,7 +53,7 @@ while True:
         print("crc: {}".format(crc))
         print("\n\n")
         
-        data = list([temperature,humidity,CO2,TVOC,fire])
+        data = list([humidity, temperature, CO2, TVOC, fire])
         with open('RAW_DATA_'+date+".csv", 'a', newline='', encoding='UTF-8') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(data)
