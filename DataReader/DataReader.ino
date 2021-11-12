@@ -4,7 +4,7 @@
 #include <CCS811.h>
 #include <stdlib.h>
 
-#define DHTPIN 23
+#define DHTPIN 15
 #define DHTTYPE DHT11
 #define BUTTON 35
 
@@ -12,11 +12,6 @@ DHT dht(DHTPIN, DHTTYPE);
 CCS811 sensor;
 
 uint8_t id = 0x5D;
-
-union {
-  float val;
-  unsigned char bytes[4];
-} fl;
 
 Oscup oscup = Oscup(id, 115200);
 void setup() {
@@ -30,28 +25,24 @@ void setup() {
 
 void loop() {
   char arr[16] = {0};
-
-  union {
-    float val;
-    unsigned char bytes[4];
-  } humidity;
-
-  union {
-    float val;
-    unsigned char bytes[4];
-  } temperature;
-
+  
   if (sensor.checkDataReady() == true) {
     float temp = dht.readTemperature();
-    humidity.val = dht.readHumidity();
-    temperature.val = dht.computeHeatIndex(temp, humidity.val, false);
+    float humidity = dht.readHumidity();
+    float temperature = dht.computeHeatIndex(temp, humidity, false);
     int co2 = sensor.getCO2PPM();
     int tvoc = sensor.getTVOCPPB();
 
-    for (int i = 0; i < sizeof(float); i++) arr[i] = fl.bytes[i];
-
-    for (int i = sizeof(float); i < sizeof(float) * 2; i++) arr[i] = fl.bytes[i - sizeof(float)];
-
+    char *fbuff = (char *)malloc(sizeof(float));
+    float2Bytes(fbuff, temperature);
+    for (int i = 0; i < sizeof(float); i++) arr[i] = fbuff[i];
+    free(fbuff);
+    
+    char *fbuff2 = (char *)malloc(sizeof(float));
+    float2Bytes(fbuff2, humidity);
+    for (int i = sizeof(float); i < sizeof(float) * 2; i++) arr[i] = fbuff2[i - sizeof(float)];
+    free(fbuff2);
+    
     unsigned char *buff = int_toBytes(co2);
     for (int i = sizeof(float) * 2; i < sizeof(float) * 2 + sizeof(int); i++) arr[i] = buff[i - sizeof(float) * 2];
     free(buff);
@@ -72,6 +63,10 @@ void loop() {
 
   sensor.writeBaseLine(0x847B);
   delay(300);
+}
+
+void float2Bytes(char bytes_temp[4],float float_variable){ 
+  memcpy(bytes_temp, (unsigned char*) (&float_variable), 4);
 }
 
 unsigned char *int_toBytes(uint32_t number) {
