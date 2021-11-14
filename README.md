@@ -24,7 +24,7 @@ The following hardware components were used to carry out the project:
 ### Libraries
 the following libraries are those used to carry out the project:
  - <a href="https://github.com/ProjectoOfficial/Oscup"> Oscup - Open Source Custom UART Protocol By Projecto<a/>
- - <a href"https://www.dropbox.com/sh/or1jzflapzbdepd/AACgGE_AW6nqoYV6fwAW4lx9a/Libraries?dl=0&subfolder_nav_tracking=1">CCS811 Libray </a>
+ - <a href="https://www.dropbox.com/sh/or1jzflapzbdepd/AACgGE_AW6nqoYV6fwAW4lx9a/Libraries?dl=0&subfolder_nav_tracking=1">CCS811 Libray </a>
  - <a href="https://github.com/adafruit/DHT-sensor-library"> DHT11 sensor Library by Adafruit</a>
  
 ### Machine Learning
@@ -42,4 +42,7 @@ the following libraries are those used to carry out the project:
  This software is provided as it is, without any warranties. <br/>
  Authors: Dott. Daniel Rossi, Dott. Riccardo Salami both B.Sc. Software Engineers and M.Sc. Artificial Intelligence Engineering students
  
- ![Your Repository’s Stats](https://github-readme-stats.vercel.app/api?username=ProjectoOfficial&show_icons=true)
+<a href = "https://github.com/Your_GitHub_Username/Oscup/graphs/contributors">
+<img src = "https://contrib.rocks/image?repo=ProjectoOfficial/Oscup"/>
+</a>
+
