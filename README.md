@@ -42,7 +42,7 @@ the following libraries are those used to carry out the project:
  This software is provided as it is, without any warranties. <br/>
  Authors: Dott. Daniel Rossi, Dott. Riccardo Salami both B.Sc. Software Engineers and M.Sc. Artificial Intelligence Engineering students
  
-<a href = "https://github.com/Your_GitHub_Username/Oscup/graphs/contributors">
+<a href = "https://github.com/ProjectoOfficial/FiremanSam/graphs/contributors">
 <img src = "https://contrib.rocks/image?repo=ProjectoOfficial/Oscup"/>
 </a>
 
