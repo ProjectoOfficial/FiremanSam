@@ -1,7 +1,7 @@
 # FiremanSam
  [![License](https://poser.pugx.org/aimeos/aimeos-typo3/license.svg)](https://packagist.org/packages/aimeos/aimeos-typo3)
  ![Hits](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https://github.com/ProjectoOfficial/FiremanSam)
-  <img src=https://komarev.com/ghpvc/?username=ProjectoOfficial/>
+  <img src="https://komarev.com/ghpvc/?username=ProjectoOfficial"/>
   
 Contents
 ========
@@ -27,4 +27,4 @@ Contents
  This software is provided as it is, without any warranties. <br/>
  Authors: Dott. Daniel Rossi, Dott. Riccardo Salami both B.Sc. Software Engineers and M.Sc. Artificial Intelligence Engineering students
  
- <p style="text-align:center;">![Your Repository’s Stats](https://github-readme-stats.vercel.app/api?username=ProjectoOfficial&show_icons=true)</p>
+ ![Your Repository’s Stats](https://github-readme-stats.vercel.app/api?username=ProjectoOfficial&show_icons=true)
