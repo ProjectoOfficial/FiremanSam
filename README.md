@@ -26,3 +26,5 @@ Contents
  ### About
  This software is provided as it is, without any warranties. <br/>
  Authors: Dott. Daniel Rossi, Dott. Riccardo Salami both B.Sc. Software Engineers and M.Sc. Artificial Intelligence Engineering students
+ 
+ ![Your Repository’s Stats](https://github-readme-stats.vercel.app/api?username=ProjectoOfficial&show_icons=true)
