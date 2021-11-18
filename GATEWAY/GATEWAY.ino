@@ -23,8 +23,6 @@ const String PAIRS_FILE = "/pairs.txt";
 
 AsyncWebServer server(80);
 
-bool CONFIGURATE = true;
-
 const char* ssid_AP     = "FiremanSam-Gateway";
 const char* password_AP = "12345678";
 
@@ -224,29 +222,30 @@ void SD_Update_data() {
     }
   }
 
-  char* prova = (char *)malloc(input_IP.length());
-  input_IP.toCharArray(prova, input_IP.length());
-  Serial.println(prova);
-  if (!Gateway_IP.fromString((const char*)prova)) {
+  char* GWIP = (char *)malloc(input_IP.length());
+  char* RIP = (char *)malloc(input_ROUTER.length());
+  char* MASK = (char *)malloc(input_SUBNET.length());
+
+  input_IP.toCharArray(GWIP, input_IP.length());
+  input_ROUTER.toCharArray(RIP, input_ROUTER.length());
+  input_SUBNET.toCharArray(MASK, input_SUBNET.length());
+
+  if (!Gateway_IP.fromString((const char*)GWIP)) {
     Serial.println("Failed to retrieve Gateway IP Address from SD");
-    Serial.println(input_IP);
-    Serial.println(Gateway_IP);
     file.close();
     return;
   }
-  if (!Router_IP.fromString(input_ROUTER)) {
+  if (!Router_IP.fromString((const char*)RIP)) {
     Serial.println("Failed to retrieve Router IP Address from SD");
     file.close();
     return;
   }
-  if (!Subnet.fromString(input_SUBNET)) {
+  if (!Subnet.fromString((const char*)MASK)) {
     Serial.println("Failed to retrieve Subnet Mask from SD");
     file.close();
     return;
   }
-
-  if (input_SSID != "" && input_PASSWORD != "" && input_EMAIL != "" && input_IP != "" && input_ROUTER != "" && input_SUBNET != "")
-    CONFIGURATE = 0;
+  
   file.close();
 }
 // **************************VOID SETUP****************************
@@ -255,7 +254,7 @@ void setup() {
   SDCard_Setup();
   SD_Update_data();
 
-  if (CONFIGURATE && !SD.exists(CONFIG_FILE)) {
+  if (!SD.exists(CONFIG_FILE)) {
     // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     WiFi.softAP(ssid_AP, password_AP);
     if (!WiFi.softAPConfig(local_IP, local_IP, subnet)) {
@@ -272,7 +271,14 @@ void setup() {
   else {
     // LET GATEWAY START ITS JOB
     Serial.print("Attempting to connect to ");
-    WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
+    Serial.println(input_SSID);
+
+    char* ssid = (char *)malloc(input_SSID.length());
+    char* psw = (char *)malloc(input_PASSWORD.length());
+    input_SSID.toCharArray(ssid, input_SSID.length());
+    input_PASSWORD.toCharArray(psw, input_PASSWORD.length());
+    
+    WiFi.begin(ssid, psw);
 
     IPAddress primaryDNS(8, 8, 8, 8);
     IPAddress secondaryDNS(8, 8, 4, 4);
@@ -288,7 +294,11 @@ void setup() {
         dot_time = millis();
       }
     }
+    Serial.println("WiFi Connected!");
+    Serial.println(WiFi.localIP());
     Gateway();
+    server.onNotFound(notFound);
+    server.begin();
   }
 }
 

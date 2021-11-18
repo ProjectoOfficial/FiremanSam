@@ -168,20 +168,45 @@ const char gateway_html[] PROGMEM = R"rawliteral(
 
         body{ margin: 0;padding: 0;font-family: Arial, Helvetica, sans-serif;background-color: #a6e9d5;}
 
-        .box{ width: 70%; padding: 40px; position: absolute; top: 50%; left: 50%; 
-              transform: translate(-50%,-50%); background-color: #191919; color: white; 
-              text-align: center; border-radius: 24px;}
+        .box{ width: 70%; padding: 40px;  margin: auto; margin-top:25px;
+              background-color: #191919; color: white; text-align: center; border-radius: 24px;}
 
-        input[type='submit']{ border: 0; display: block; background: none; margin: 20px auto;
+        .unv {background-color: #191919; width: 73%; margin: auto; 
+              padding: 16px; position: relative; min-width: 40px; list-style-type: none;}
+         
+        .nv{ display:inline; border: 0; background: none; margin: 20px auto; text-decoration: none;
+        text-align: center; border: 2px solid #0dcaf0; padding: 14px 10px; width: 140px; 
+        outline: none; border-radius: 5px; color: white; transition: 0.3s; cursor: pointer;}
+
+        .nv:hover{background-color: #6edff6;}
+        
+        input{ border: 0; display: block; background: none; margin: 20px auto;
         text-align: center; border: 2px solid #0dcaf0; padding: 14px 10px; width: 140px; 
         outline: none; border-radius: 24px; color: white; transition: 0.3s; cursor: pointer;}
         
-        input[type='submit']:hover{ background-color: #6edff6;}
+        input:hover{ background-color: #6edff6; color:#191919;}
       </style>
     
   </head>
   <body>
+    <ul class="unv">
+      <li><a class="nv" href="#reset">Reset</a></li>
+    </ul>
   
+    <div class="box">
+      <h1 id="reset">Reset device</h1>
+      <br/>
+      <input type="button" value="Reset"/>
+      <br/>
+    </div>
+
+    <div class="box">
+      <h1 id="reset">Reset device</h1>
+      <br/>
+      <input type="button" value="Reset"/>
+      <br/>
+    </div>
+
   </body>
 </html>
 )rawliteral";
