@@ -1,13 +1,14 @@
 #ifndef INDEX_H_
 #define INDEX_H_
 
+//**********************************CONFIGURATION SETUP**************************************
 const char setup_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
   <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Fire Detector Configuration</title>
+      <title>Gateway Configuration</title>
       
       <style>
         html {font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}
@@ -34,7 +35,7 @@ const char setup_html[] PROGMEM = R"rawliteral(
     </head>
   <body>
     <form action="/setup" class="box" id="my-form">
-      <h1 class="display-1">Fire Detector Configuration</h1>
+      <h1 class="display-1">Gateway Configuration</h1>
       <div class="part">
         <input name="ssid" type="text" placeholder="wifi ssid">
       </div>
@@ -42,7 +43,16 @@ const char setup_html[] PROGMEM = R"rawliteral(
         <input name="password" type="password" placeholder="wifi password">
       </div>
       <div class="part">
-        <input name="IPAddress" type="text" placeholder="gateway IP address">
+        <input name="email" type="email" placeholder="your contact email">
+      </div>
+      <div class="part">
+        <input name="IPAddress" type="text" placeholder="static IP address">
+      </div>
+      <div class="part">
+        <input name="IPRouter" type="text" placeholder="router IP address">
+      </div>
+      <div class="part">
+        <input name="Subnet" type="text" placeholder="subnet mask">
       </div>
       <input type="submit" value="Save">
     </form>
@@ -52,13 +62,14 @@ const char setup_html[] PROGMEM = R"rawliteral(
 )rawliteral";
 
 
+//**********************************CONFIGURATION FAIL**************************************
 const char fail_html1[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
   <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Fire Detector Configuration</title>
+      <title>Gateway Configuration</title>
       
       <style>
         html {font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: left;}
@@ -103,13 +114,14 @@ const char fail_html2[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+//**********************************CONFIGURATION SUCCESS**************************************
 const char success_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
   <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Fire Detector Configuration</title>
+      <title>Gateway Configuration</title>
       
       <style>
         html {font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}
@@ -137,5 +149,83 @@ const char success_html[] PROGMEM = R"rawliteral(
   </body>
 </html>
 )rawliteral";
+
+
+/*
+ *                      GATEWAY WEB INTERFACE
+ */
+
+const char gateway_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Gateway Configuration</title>
+      
+      <style>
+        html {font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}
+
+        body{ margin: 0;padding: 0;font-family: Arial, Helvetica, sans-serif;background-color: #a6e9d5;}
+
+        .box{ width: 70%; padding: 40px; position: absolute; top: 50%; left: 50%; 
+              transform: translate(-50%,-50%); background-color: #191919; color: white; 
+              text-align: center; border-radius: 24px;}
+
+        input[type='submit']{ border: 0; display: block; background: none; margin: 20px auto;
+        text-align: center; border: 2px solid #0dcaf0; padding: 14px 10px; width: 140px; 
+        outline: none; border-radius: 24px; color: white; transition: 0.3s; cursor: pointer;}
+        
+        input[type='submit']:hover{ background-color: #6edff6;}
+      </style>
+    
+  </head>
+  <body>
   
+  </body>
+</html>
+)rawliteral";
+
+
+// NOME SENSORE - HUM - TEMP - CO2 - TVOC - NOME ALLARME -
+// VANNO CONCATENATI NELLA SCRITTURA DELLA PAGINA WEB. 
+const char BOX1[] PROGMEM = R"rawliteral(
+<div class="box">
+  <h2>Sensor: 
+)rawliteral";  
+
+const char BOX2[] PROGMEM = R"rawliteral(
+  </h2>
+  <ul>
+    <li> Humidity: 
+)rawliteral";
+
+const char BOX3[] PROGMEM = R"rawliteral(
+    % </li>
+    <li> Temperature: 
+)rawliteral";
+
+const char BOX4[] PROGMEM = R"rawliteral(
+    °C </li>
+    <li> CO2: 
+)rawliteral";
+
+const char BOX5[] PROGMEM = R"rawliteral(
+    ppm </li>
+    <li> TVOC: 
+)rawliteral";
+
+//ALARM: on/off
+const char BOX6[] PROGMEM = R"rawliteral(
+    </li>
+  </ul>
+  <br />
+  <h2>Alarm: 
+)rawliteral";
+
+const char BOX7[] PROGMEM = R"rawliteral(
+    </h2>
+</div>
+)rawliteral";
+
 #endif // INDEX_H_

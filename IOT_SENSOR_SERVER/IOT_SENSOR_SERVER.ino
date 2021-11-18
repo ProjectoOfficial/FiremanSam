@@ -41,7 +41,6 @@ const char* password_AP = "12345678";
 const char* WIFI_SSID = "ssid";
 const char* WIFI_PASSWORD = "password";
 const char* IP_ADDRESS = "IPAddress";
-const char* _ERROR = "error";
 
 String input_SSID = "";
 String input_PASSWORD = "";
@@ -58,6 +57,7 @@ void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
+/**********************VOID CONFIGURE********************************/
 void configure() {
 
   //ROOT PAGE REDIRECT TO SETUP PAGE
@@ -133,6 +133,9 @@ void setup() {
     server.begin();
   }
   else {
+    /*  
+     *   LEGGERE DATI DALLA EEPROM
+     */
     // LET SENSOR START ITS JOB
     Serial.print("Attempting to connect to ");
     WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
