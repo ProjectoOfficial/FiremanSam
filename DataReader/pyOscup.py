@@ -2,7 +2,7 @@
 Oscup: Open Source Custom Uart Protocol
 This Software was release under: GPL-3.0 License
 Copyright � 2021 Daniel Rossi & Riccardo Salami
-Version: ALPHA 1.2.0
+Version: 1.2.1
 '''
 
 from dataclasses import dataclass

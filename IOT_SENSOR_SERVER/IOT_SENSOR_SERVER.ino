@@ -7,16 +7,16 @@
 #include "Adafruit_CCS811.h"
 #include <CCS811.h>
 
-#define DHTPIN 15
-#define DHTTYPE DHT11
-#define LED 16
-
 #define CONNECT_TIME 10000
 #define TIMEOUTTIME 5000
 
 /*
    SENSOR CONFIGURATION
 */
+
+#define DHTPIN 15
+#define DHTTYPE DHT11
+#define LED 16
 
 DHT dht(DHTPIN, DHTTYPE);
 CCS811 cc811;
@@ -49,41 +49,43 @@ String input_IP = "";
 
 String error = "";
 
+IPAddress local_IP(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+
+IPAddress Gateway_IP;
+
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
-IPAddress local_IP(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
-
-IPAddress WiFi_IP;
-
 void configure() {
 
+  //ROOT PAGE REDIRECT TO SETUP PAGE
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", setup_html);
   });
 
+  //SETUP PAGE
   server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) {
     error = "";
-    if (request->getParam(WIFI_SSID)->value() != "") {
+
+    if (request->getParam(WIFI_SSID)->value() != "")
       input_SSID = request->getParam(WIFI_SSID)->value();
-    } else {
+    else
       error += "<li>WiFi SSID not configured</li>";
-    }
-    if (request->getParam(WIFI_PASSWORD)->value() != "") {
+
+    if (request->getParam(WIFI_PASSWORD)->value() != "")
       input_PASSWORD = request->getParam(WIFI_PASSWORD)->value();
-    } else {
+    else
       error += "<li>WiFi Password not configured</li>";
-    }
+
     if (request->getParam(IP_ADDRESS)->value() != "") {
       input_IP = request->getParam(IP_ADDRESS)->value();
-
-      if (!WiFi_IP.fromString(input_IP))
+      if (!Gateway_IP.fromString(input_IP))
         error += "<li>IP Address invalid</li>";
-    } else {
+    } else
       error += "<li>Gateway IP Address not configured</li>";
-    }
+
 
     if (error != "")
       request->send(200, "text/html", fail_html1 + error + fail_html2);
@@ -91,16 +93,19 @@ void configure() {
       request->send(200, "text/html", success_html);
   });
 
+  //ERROR PAGE
   server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) {
 
     request->send(200, "text/html", setup_html);
   });
 
+  //SUCCESS PAGE
   server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) {
     ESP.restart();
   });
 }
 
+/**********************VOID SETUP********************************/
 void setup() {
   /************************************
         LEGGERE I DATI SULLA EEPROM
@@ -110,6 +115,7 @@ void setup() {
   pinMode(LED, OUTPUT);
 
   if (CONFIGURATE) {
+    // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     WiFi.softAP(ssid_AP, password_AP);
     if (!WiFi.softAPConfig(local_IP, local_IP, subnet)) {
       Serial.println("STA Failed to configure");
@@ -127,6 +133,7 @@ void setup() {
     server.begin();
   }
   else {
+    // LET SENSOR START ITS JOB
     Serial.print("Attempting to connect to ");
     WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
 
@@ -181,6 +188,7 @@ void readCC811(int *co2, int *tvoc) {
   cc811.writeBaseLine(0x847B);
 }
 
+/**********************VOID LOOP********************************/
 void loop() {
   if (!CONFIGURATE) {
     if (millis() - updateTime > 500) {
