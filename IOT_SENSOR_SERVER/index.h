@@ -42,7 +42,8 @@ const char setup_html[] PROGMEM = R"rawliteral(
         <input name="password" type="password" placeholder="wifi password">
       </div>
       <div class="part">
-        <input name="IPAddress" type="text" placeholder="gateway IP address">
+        
+        <input name="Email" type="text" placeholder="Email address">
       </div>
       <input type="submit" value="Save">
     </form>

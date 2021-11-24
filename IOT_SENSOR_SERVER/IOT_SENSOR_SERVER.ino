@@ -40,18 +40,17 @@ const char* password_AP = "12345678";
 
 const char* WIFI_SSID = "ssid";
 const char* WIFI_PASSWORD = "password";
-const char* IP_ADDRESS = "IPAddress";
+const char* EMAIL_ADDRESS = "Email";
 
 String input_SSID = "";
 String input_PASSWORD = "";
-String input_IP = "";
+String input_EMAIL = "";
 
 String error = "";
 
 IPAddress local_IP(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 
-IPAddress Gateway_IP;
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
@@ -79,12 +78,11 @@ void configure() {
     else
       error += "<li>WiFi Password not configured</li>";
 
-    if (request->getParam(IP_ADDRESS)->value() != "") {
-      input_IP = request->getParam(IP_ADDRESS)->value();
-      if (!Gateway_IP.fromString(input_IP))
-        error += "<li>IP Address invalid</li>";
-    } else
-      error += "<li>Gateway IP Address not configured</li>";
+    if (request->getParam(EMAIL_ADDRESS)->value() != "") {
+      input_EMAIL = request->getParam(EMAIL_ADDRESS)->value();
+    }
+    else
+      error += "<li>Email Address not configured</li>";
 
 
     if (error != "")
