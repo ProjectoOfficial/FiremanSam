@@ -7,13 +7,16 @@
 #include "Adafruit_CCS811.h"
 #include <CCS811.h>
 
+#include "ExtEEPROM.h"
+#include "Wire.h"
+
 #define CONNECT_TIME 10000
 #define TIMEOUTTIME 5000
 
-/*
-   SENSOR CONFIGURATION
+/*                                    *************************************
+ ***************************************      SENSORS CONFIGURATION      **********************************************
+ *                                    *************************************
 */
-
 #define DHTPIN 15
 #define DHTTYPE DHT11
 #define LED 16
@@ -28,36 +31,56 @@ float devs[] = {12.707672, 4.145223, 1496.357791, 2692.752151};
 
 size_t updateTime = 0;
 
-/*
-   WEB SERVER CONFIGURATION
+/*                                    *************************************
+ ***************************************    WEBSERVER CONFIGURATION      **********************************************
+ *                                    *************************************
 */
+#define BLINK_TIME 500
+#define MAX_STRING_LENGTH 80 //limiting ssid, psw, email, dev length
+#define STRING_SEPARATOR 0xFD
 AsyncWebServer server(80);
 
 bool CONFIGURATE = true;
+size_t timeBlink = millis();
 
 const char* ssid_AP     = "FiremanSam-Sensor";
 const char* password_AP = "12345678";
 
 const char* WIFI_SSID = "ssid";
 const char* WIFI_PASSWORD = "password";
-const char* EMAIL_ADDRESS = "Email";
+const char* EMAIL_ADDRESS = "email";
+const char* DEVICE_NAME = "device";
 
 String input_SSID = "";
 String input_PASSWORD = "";
 String input_EMAIL = "";
+String input_DEVICE = "";
 
 String error = "";
 
 IPAddress local_IP(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 
+void led_blink() {
+  /*
+     @brief it is used for showing to the user that the device
+            is in configuration mode
+  */
+  if (millis() - timeBlink > BLINK_TIME) {
+    digitalWrite(LED, !digitalRead(LED));
+    timeBlink = millis();
+  }
+}
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
-/**********************VOID CONFIGURE********************************/
 void configure() {
+  /*
+     @brief implements the configuration webserver. It is used for
+            configuring the FiremanSensor for user's local network
+  */
 
   //ROOT PAGE REDIRECT TO SETUP PAGE
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -68,32 +91,45 @@ void configure() {
   server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) {
     error = "";
 
+    //WiFi SSID
     if (request->getParam(WIFI_SSID)->value() != "")
       input_SSID = request->getParam(WIFI_SSID)->value();
     else
       error += "<li>WiFi SSID not configured</li>";
 
+    //WiFi Password
     if (request->getParam(WIFI_PASSWORD)->value() != "")
       input_PASSWORD = request->getParam(WIFI_PASSWORD)->value();
     else
       error += "<li>WiFi Password not configured</li>";
 
-    if (request->getParam(EMAIL_ADDRESS)->value() != "") {
+    //Email Address
+    if (request->getParam(EMAIL_ADDRESS)->value() != "")
       input_EMAIL = request->getParam(EMAIL_ADDRESS)->value();
-    }
     else
       error += "<li>Email Address not configured</li>";
 
+    //Device Name
+    if (request->getParam(DEVICE_NAME)->value() != "")
+      input_DEVICE = request->getParam(DEVICE_NAME)->value();
+    else
+      error += "<li>Device name not configured</li>";
+
+    if (input_SSID.length() > MAX_STRING_LENGTH) error += "<li>SSID too Long!</li>";
+    if (input_PASSWORD.length() > MAX_STRING_LENGTH) error += "<li>Password too Long!</li>";
+    if (input_EMAIL.length() > MAX_STRING_LENGTH) error += "<li>Email too Long!</li>";
+    if (input_DEVICE.length() > MAX_STRING_LENGTH) error += "<li>Device name too Long!</li>";
 
     if (error != "")
       request->send(200, "text/html", fail_html1 + error + fail_html2);
-    else
+    else {
+      store(input_SSID, input_PASSWORD, input_EMAIL, input_DEVICE);
       request->send(200, "text/html", success_html);
+    }
   });
 
   //ERROR PAGE
   server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) {
-
     request->send(200, "text/html", setup_html);
   });
 
@@ -103,17 +139,82 @@ void configure() {
   });
 }
 
-/**********************VOID SETUP********************************/
+/*                                    *************************************
+ ***************************************      EEPROM CONFIGURATION       **********************************************
+ *                                    *************************************
+*/
+ExtEEPROM ee = ExtEEPROM();
+#define EEPROM_PIN 26
+
+#define CONFIGURED_EEPROM 0
+#define SSID_EEPROM       100
+#define PASSWORD_EEPROM   (SSID_EEPROM + MAX_STRING_LENGTH + 1)
+#define EMAIL_EEPROM      (PASSWORD_EEPROM + MAX_STRING_LENGTH + 1)
+#define DEVICE_EEPROM     (EMAIL_EEPROM + MAX_STRING_LENGTH + 1)
+
+#define STORE_DELAY 2000
+#define READ_DELAY  5
+
+void store(String ssid, String password, String email, String device) {
+  String sep = String((char)STRING_SEPARATOR);
+  String buff = String(1) + sep + ssid + sep + password + sep + email + sep + device;
+  digitalWrite(EEPROM_PIN, HIGH);
+  ee.EWrite(buff);
+  delay(STORE_DELAY);
+  digitalWrite(EEPROM_PIN, LOW);
+}
+
+void load() {
+  digitalWrite(EEPROM_PIN, HIGH);
+  String sep = String((char)STRING_SEPARATOR);
+  String buff = String(ee.ERead());
+  digitalWrite(EEPROM_PIN, LOW);
+
+  Serial.println(buff);
+
+  String conf = buff.substring(0, 1);
+
+  buff.remove(0, 2);
+  input_SSID = buff.substring(0, buff.indexOf(sep, 1));
+
+  buff.remove(0, input_SSID.length() + 1);
+  input_PASSWORD = buff.substring(0, buff.indexOf(sep, 1));
+
+  buff.remove(0, input_PASSWORD.length() + 1);
+  input_EMAIL = buff.substring(0, buff.indexOf(sep, 1));
+
+  buff.remove(0, input_EMAIL.length() + 1);
+  input_DEVICE = buff;
+
+  Serial.println(conf);
+  Serial.println(input_SSID);
+  Serial.println(input_PASSWORD);
+  Serial.println(input_EMAIL);
+  Serial.println(input_DEVICE);
+
+  if (conf == String(1))
+    CONFIGURATE = false;
+}
+
+void reset() {
+  ee.writeEEPROM(0, (uint8_t) 255);
+  ESP.restart();
+}
+
+/*                                    *************************************
+ ***************************************           VOID SETUP            **********************************************
+ *                                    *************************************
+*/
 void setup() {
-  /************************************
-        LEGGERE I DATI SULLA EEPROM
-        se non ci sono procedere con la configurazione
-  */
+  Serial.begin(115200);
+  ee.begin();
 
   pinMode(LED, OUTPUT);
+  pinMode(EEPROM_PIN, OUTPUT);
 
-  if (CONFIGURATE) {
-    // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
+  load();
+
+  if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     WiFi.softAP(ssid_AP, password_AP);
     if (!WiFi.softAPConfig(local_IP, local_IP, subnet)) {
       Serial.println("STA Failed to configure");
@@ -123,18 +224,11 @@ void setup() {
     Serial.println(IP);
 
     configure();
-    /************************************
-        SALVARE I DATI SULLA EEPROM
-    */
 
     server.onNotFound(notFound);
     server.begin();
   }
-  else {
-    /*  
-     *   LEGGERE DATI DALLA EEPROM
-     */
-    // LET SENSOR START ITS JOB
+  else { // LET SENSOR START ITS JOB
     Serial.print("Attempting to connect to ");
     WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
 
@@ -146,7 +240,6 @@ void setup() {
         dot_time = millis();
       }
     }
-
     while (cc811.begin() != 0)
       delay(100);
     dht.begin();
@@ -154,7 +247,10 @@ void setup() {
   }
 }
 
-/**********************DHT11 READ********************************/
+/*                                    *************************************
+ ***************************************           DHT11 READ            **********************************************
+ *                                    *************************************
+*/
 void readDHT11(float *h, float *t) {
   *h = dht.readHumidity();
   float temp = dht.readTemperature();
@@ -172,7 +268,10 @@ void readDHT11(float *h, float *t) {
   Serial.print(F("°C "));
 }
 
-/**********************CCS811 READ********************************/
+/*                                    *************************************
+ ***************************************           CCS811 READ           **********************************************
+ *                                    *************************************
+*/
 void readCC811(int *co2, int *tvoc) {
   if (cc811.checkDataReady() == true) {
     *co2 = cc811.getCO2PPM();
@@ -189,7 +288,10 @@ void readCC811(int *co2, int *tvoc) {
   cc811.writeBaseLine(0x847B);
 }
 
-/**********************VOID LOOP********************************/
+/*                                    *************************************
+ ***************************************            VOID LOOP            **********************************************
+ *                                    *************************************
+*/
 void loop() {
   if (!CONFIGURATE) {
     if (millis() - updateTime > 500) {
@@ -220,5 +322,7 @@ void loop() {
         updateTime = millis();
       }
     }
+  } else {
+    led_blink();
   }
 }

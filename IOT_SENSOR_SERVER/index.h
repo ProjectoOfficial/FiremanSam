@@ -36,14 +36,16 @@ const char setup_html[] PROGMEM = R"rawliteral(
     <form action="/setup" class="box" id="my-form">
       <h1 class="display-1">Fire Detector Configuration</h1>
       <div class="part">
-        <input name="ssid" type="text" placeholder="wifi ssid">
+        <input name="ssid" type="text" placeholder="WiFi SSID">
       </div>
       <div class="part">
-        <input name="password" type="password" placeholder="wifi password">
+        <input name="password" type="password" placeholder="WiFi Password">
       </div>
       <div class="part">
-        
-        <input name="Email" type="text" placeholder="Email address">
+        <input name="email" type="text" placeholder="Email Address">
+      </div>
+      <div class="part">
+        <input name="device" type="text" placeholder="Device Name">
       </div>
       <input type="submit" value="Save">
     </form>
