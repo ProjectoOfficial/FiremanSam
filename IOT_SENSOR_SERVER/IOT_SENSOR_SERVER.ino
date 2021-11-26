@@ -20,11 +20,12 @@
 #define DHTPIN 15
 #define DHTTYPE DHT11
 #define LED 16
+#define RESET_PIN 14
 
 DHT dht(DHTPIN, DHTTYPE);
 CCS811 cc811;
 
-float weights[] = { -0.004163, 0.005974, 005523, 0.005606};
+float weights[] = { -0.004163, 0.005974, 0.005523, 0.005606};
 float bias = -0.007646;
 float means[] = {54.023747, 25.116755, 1655.704485, 1035.536939};
 float devs[] = {12.707672, 4.145223, 1496.357791, 2692.752151};
@@ -58,8 +59,8 @@ String input_DEVICE = "";
 
 String error = "";
 
-IPAddress local_IP(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
+IPAddress IPAddress_AP(192, 168, 1, 1);
+IPAddress subnet_AP(255, 255, 255, 0);
 
 void led_blink() {
   /*
@@ -155,6 +156,9 @@ ExtEEPROM ee = ExtEEPROM();
 #define STORE_DELAY 2000
 #define READ_DELAY  5
 
+#define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
+size_t start_reset;
+
 void store(String ssid, String password, String email, String device) {
   String sep = String((char)STRING_SEPARATOR);
   String buff = String(1) + sep + ssid + sep + password + sep + email + sep + device;
@@ -197,7 +201,10 @@ void load() {
 }
 
 void reset() {
+  digitalWrite(EEPROM_PIN, HIGH);
   ee.writeEEPROM(0, (uint8_t) 255);
+  delay(10);
+  digitalWrite(EEPROM_PIN, LOW);
   ESP.restart();
 }
 
@@ -210,18 +217,18 @@ void setup() {
   ee.begin();
 
   pinMode(LED, OUTPUT);
+  pinMode(RESET_PIN, INPUT);
   pinMode(EEPROM_PIN, OUTPUT);
 
   load();
 
   if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
-    WiFi.softAP(ssid_AP, password_AP);
-    if (!WiFi.softAPConfig(local_IP, local_IP, subnet)) {
+    if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
       Serial.println("STA Failed to configure");
     }
-    IPAddress IP = WiFi.softAPIP();
+    WiFi.softAP(ssid_AP, password_AP);
     Serial.print("Access Point IP address: ");
-    Serial.println(IP);
+    Serial.println(WiFi.softAPIP());
 
     configure();
 
@@ -287,6 +294,24 @@ void readCC811(int *co2, int *tvoc) {
   }
   cc811.writeBaseLine(0x847B);
 }
+/*                                    *************************************
+ ***************************************         RESET MONITOR           **********************************************
+ *                                    *************************************
+*/
+
+void reset_monitor() {
+  if (digitalRead(RESET_PIN)) {
+    if (millis() - start_reset > RESET_DELAY) {
+      for (int i = 0; i < 10; i++) {
+        digitalWrite(LED, !digitalRead(LED));
+        delay(100);
+      }
+      reset();
+    }
+  } else {
+    start_reset = millis();
+  }
+}
 
 /*                                    *************************************
  ***************************************            VOID LOOP            **********************************************
@@ -322,6 +347,7 @@ void loop() {
         updateTime = millis();
       }
     }
+    reset_monitor();
   } else {
     led_blink();
   }
