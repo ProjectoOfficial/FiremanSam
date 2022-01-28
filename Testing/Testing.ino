@@ -2,25 +2,18 @@
 #include "Adafruit_CCS811.h"
 #include <CCS811.h>
 #include <WiFi.h>
-#include <FirebaseESP32.h>
 
 #define DHTPIN 15
 #define DHTTYPE DHT11
 #define LED 16
 
-#define FIREBASE_HOST ""
-#define FIREBASE_AUTH ""
-
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
-
-FirebaseData fData;
-FirebaseJson json;
 
 DHT dht(DHTPIN, DHTTYPE);
 CCS811 sensor;
 
-float weights[] = { -0.004163, 0.005974, 005523, 0.005606};
+float weights[] = { -0.004163, 0.005974, 0.005523, 0.005606};
 float bias = -0.007646;
 float means[] = {54.023747, 25.116755, 1655.704485, 1035.536939};
 float devs[] = {12.707672, 4.145223, 1496.357791, 2692.752151};
@@ -61,11 +54,6 @@ void setup() {
   Serial.print("WiFi Connesso, indirizzo IP:");
   Serial.println(WiFi.localIP());
   Serial.println();
-
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  Firebase.reconnectWiFi(true);
-  Firebase.setReadTimeout(fData, 1000 * 60);
-  Firebase.setwriteSizeLimit(fData, "tiny");
 
   Serial.println();
   Serial.println("-------------------------------------");
@@ -136,8 +124,6 @@ void loop() {
       }
       Serial.print("\n");
 
-      json.set("/value", score);
-      Firebase.updateNode(fData, "/score", json);
       updateTime = millis();
     }
   }
