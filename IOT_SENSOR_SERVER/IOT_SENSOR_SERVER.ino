@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <FirebaseESP32.h>
 #include "index.h"
 
 #include "DHT.h"
@@ -29,6 +30,17 @@ float weights[] = { -0.33296722, 0.58369327, 0.35757497, 0.24524014};
 float bias = -0.77211832;
 float means[] = {54.11172669, 25.13093259, 1661.25577101, 1030.92982456};
 float devs[] = {1.60017988e+02, 1.79208068e+01, 2.22233383e+06, 7.23209521e+06};
+
+/*                                    *************************************
+ ***************************************      FIREBASE CONFIGURATION      **********************************************
+ *                                    *************************************
+*/
+
+#define FIREBASE_HOST ""
+#define FIREBASE_AUTH ""
+
+FirebaseData fData;
+FirebaseJson json;
 
 size_t updateTime = 0;
 
@@ -241,6 +253,7 @@ void setup() {
 
     size_t start_time = millis();
     size_t dot_time = millis();
+
     while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
       if (dot_time + 250 < millis()) {
         Serial.print(".");
@@ -251,6 +264,14 @@ void setup() {
       delay(100);
     dht.begin();
     cc811.setMeasCycle(cc811.eCycle_250ms);
+
+    
+    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+    Firebase.reconnectWiFi(true);
+    Firebase.setReadTimeout(fData, 1000 * 60);
+    Firebase.setwriteSizeLimit(fData, "tiny");
+
+    updateTime = millis();
   }
 }
 
@@ -344,6 +365,10 @@ void loop() {
           digitalWrite(LED, LOW);
         }
         Serial.print("\n");
+
+        json.set("/score", score);
+        Firebase.updateNode(fData, "/valore", json);
+
         updateTime = millis();
       }
     }
