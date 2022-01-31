@@ -11,7 +11,7 @@
 #include "ExtEEPROM.h"
 #include "Wire.h"
 
-#define CONNECT_TIME 15000
+#define CONNECT_TIME 20000
 #define TIMEOUTTIME 5000
 #define DELAYTIME 1000
 
@@ -227,22 +227,20 @@ void reset() {
 */
 void setup() {
   Serial.begin(115200);
-  ee.begin();
 
   pinMode(LED, OUTPUT);
   pinMode(RESET_PIN, INPUT);
   pinMode(EEPROM_PIN, OUTPUT);
 
+  ee.begin();
   load();
   delay(DELAYTIME);
-
-  WiFi.disconnect();
 
   if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
       Serial.println("STA Failed to configure");
     }
-    
+
     WiFi.softAP(ssid_AP, password_AP);
     Serial.print("Access Point IP address: ");
     Serial.println(WiFi.softAPIP());
@@ -254,20 +252,24 @@ void setup() {
     server.begin();
   }
   else { // LET SENSOR START ITS JOB
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+
     Serial.print("Attempting to connect to ");
     Serial.print(input_SSID);
     WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
-
-    delay(DELAYTIME);
 
     size_t start_time = millis();
     size_t dot_time = millis();
 
     while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
-      if (dot_time + 1500 < millis()) {
+      if (dot_time + 2000 < millis()) {
         Serial.print(".");
         dot_time = millis();
       }
+
+      if (WiFi.status() == WL_CONNECT_FAILED)
+        break;
     }
 
     if (WiFi.status() != WL_CONNECTED) {
@@ -288,7 +290,7 @@ void setup() {
     cc811.setMeasCycle(cc811.eCycle_250ms);
 
     delay(DELAYTIME);
-    
+
     Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
     Firebase.reconnectWiFi(true);
     Firebase.setReadTimeout(fData, 1000 * 60);
