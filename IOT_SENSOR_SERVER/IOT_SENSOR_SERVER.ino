@@ -11,8 +11,9 @@
 #include "ExtEEPROM.h"
 #include "Wire.h"
 
-#define CONNECT_TIME 10000
+#define CONNECT_TIME 15000
 #define TIMEOUTTIME 5000
+#define DELAYTIME 1000
 
 /*                                    *************************************
  ***************************************      SENSORS CONFIGURATION      **********************************************
@@ -233,14 +234,19 @@ void setup() {
   pinMode(EEPROM_PIN, OUTPUT);
 
   load();
+  delay(DELAYTIME);
+
+  WiFi.disconnect();
 
   if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
       Serial.println("STA Failed to configure");
     }
+    
     WiFi.softAP(ssid_AP, password_AP);
     Serial.print("Access Point IP address: ");
     Serial.println(WiFi.softAPIP());
+    delay(DELAYTIME);
 
     configure();
 
@@ -249,22 +255,39 @@ void setup() {
   }
   else { // LET SENSOR START ITS JOB
     Serial.print("Attempting to connect to ");
+    Serial.print(input_SSID);
     WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
+
+    delay(DELAYTIME);
 
     size_t start_time = millis();
     size_t dot_time = millis();
 
     while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
-      if (dot_time + 250 < millis()) {
+      if (dot_time + 1500 < millis()) {
         Serial.print(".");
         dot_time = millis();
       }
     }
+
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println(" cannot connect to WiFi!");
+      while (true)
+        reset_monitor();
+    }
+
+
+    delay(DELAYTIME);
+    Serial.println();
+    Serial.print("Device IP: ");
+    Serial.println(WiFi.localIP());
+
     while (cc811.begin() != 0)
       delay(100);
     dht.begin();
     cc811.setMeasCycle(cc811.eCycle_250ms);
 
+    delay(DELAYTIME);
     
     Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
     Firebase.reconnectWiFi(true);
@@ -273,6 +296,7 @@ void setup() {
 
     updateTime = millis();
   }
+  delay(DELAYTIME);
 }
 
 /*                                    *************************************
@@ -343,15 +367,17 @@ void loop() {
     if (millis() - updateTime > 500) {
       float humidity, temperature ;
       int co2 = 0, tvoc = 0;
+
       readDHT11(&humidity, &temperature);
       readCC811(&co2, &tvoc);
 
       if (co2 != 0) {
         float datas[] = {humidity, temperature, co2, tvoc};
         float score = 0;
-        for (int i = 0; i < 4; i++) {
+
+        for (int i = 0; i < 4; i++)
           score += (datas[i] - means[i]) / devs[i] * weights[i];
-        }
+
         score += bias;
         Serial.print("Score: ");
         Serial.print(score);
@@ -364,6 +390,7 @@ void loop() {
           Serial.println("\nNothing");
           digitalWrite(LED, LOW);
         }
+
         Serial.print("\n");
 
         json.set("/score", score);
@@ -372,6 +399,7 @@ void loop() {
         updateTime = millis();
       }
     }
+
     reset_monitor();
   } else {
     led_blink();
