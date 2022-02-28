@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <FirebaseESP32.h>
 #include "index.h"
 
 #include "DHT.h"
@@ -10,8 +11,9 @@
 #include "ExtEEPROM.h"
 #include "Wire.h"
 
-#define CONNECT_TIME 10000
+#define CONNECT_TIME 20000
 #define TIMEOUTTIME 5000
+#define DELAYTIME 1000
 
 /*                                    *************************************
  ***************************************      SENSORS CONFIGURATION      **********************************************
@@ -29,6 +31,17 @@ float weights[] = { -0.33296722, 0.58369327, 0.35757497, 0.24524014};
 float bias = -0.77211832;
 float means[] = {54.11172669, 25.13093259, 1661.25577101, 1030.92982456};
 float devs[] = {1.60017988e+02, 1.79208068e+01, 2.22233383e+06, 7.23209521e+06};
+
+/*                                    *************************************
+ ***************************************      FIREBASE CONFIGURATION      **********************************************
+ *                                    *************************************
+*/
+
+#define FIREBASE_HOST ""
+#define FIREBASE_AUTH ""
+
+FirebaseData fData;
+FirebaseJson json;
 
 size_t updateTime = 0;
 
@@ -214,21 +227,24 @@ void reset() {
 */
 void setup() {
   Serial.begin(115200);
-  ee.begin();
 
   pinMode(LED, OUTPUT);
   pinMode(RESET_PIN, INPUT);
   pinMode(EEPROM_PIN, OUTPUT);
 
+  ee.begin();
   load();
+  delay(DELAYTIME);
 
   if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
       Serial.println("STA Failed to configure");
     }
+
     WiFi.softAP(ssid_AP, password_AP);
     Serial.print("Access Point IP address: ");
     Serial.println(WiFi.softAPIP());
+    delay(DELAYTIME);
 
     configure();
 
@@ -236,22 +252,53 @@ void setup() {
     server.begin();
   }
   else { // LET SENSOR START ITS JOB
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+
     Serial.print("Attempting to connect to ");
+    Serial.print(input_SSID);
     WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
 
     size_t start_time = millis();
     size_t dot_time = millis();
+
     while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
-      if (dot_time + 250 < millis()) {
+      if (dot_time + 2000 < millis()) {
         Serial.print(".");
         dot_time = millis();
       }
+
+      if (WiFi.status() == WL_CONNECT_FAILED)
+        break;
     }
+
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println(" cannot connect to WiFi!");
+      while (true)
+        reset_monitor();
+    }
+
+
+    delay(DELAYTIME);
+    Serial.println();
+    Serial.print("Device IP: ");
+    Serial.println(WiFi.localIP());
+
     while (cc811.begin() != 0)
       delay(100);
     dht.begin();
     cc811.setMeasCycle(cc811.eCycle_250ms);
+
+    delay(DELAYTIME);
+
+    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+    Firebase.reconnectWiFi(true);
+    Firebase.setReadTimeout(fData, 1000 * 60);
+    Firebase.setwriteSizeLimit(fData, "tiny");
+
+    updateTime = millis();
   }
+  delay(DELAYTIME);
 }
 
 /*                                    *************************************
@@ -322,15 +369,17 @@ void loop() {
     if (millis() - updateTime > 500) {
       float humidity, temperature ;
       int co2 = 0, tvoc = 0;
+
       readDHT11(&humidity, &temperature);
       readCC811(&co2, &tvoc);
 
       if (co2 != 0) {
         float datas[] = {humidity, temperature, co2, tvoc};
         float score = 0;
-        for (int i = 0; i < 4; i++) {
+
+        for (int i = 0; i < 4; i++)
           score += (datas[i] - means[i]) / devs[i] * weights[i];
-        }
+
         score += bias;
         Serial.print("Score: ");
         Serial.print(score);
@@ -343,10 +392,16 @@ void loop() {
           Serial.println("\nNothing");
           digitalWrite(LED, LOW);
         }
+
         Serial.print("\n");
+
+        json.set("/score", score);
+        Firebase.updateNode(fData, "/valore", json);
+
         updateTime = millis();
       }
     }
+
     reset_monitor();
   } else {
     led_blink();
