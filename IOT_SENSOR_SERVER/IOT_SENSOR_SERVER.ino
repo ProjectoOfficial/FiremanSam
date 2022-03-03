@@ -396,7 +396,7 @@ void loop() {
         Serial.print("\n");
 
         json.set("/score", score);
-        Firebase.updateNode(fData, "/valore", json);
+        Firebase.updateNode(fData, input_EMAIL+"/"+input_DEVICE, json);
 
         updateTime = millis();
       }
