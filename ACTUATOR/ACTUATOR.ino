@@ -13,15 +13,15 @@
 
 #define LED 12
 #define RESET_PIN 14
-#define BUZZER 23
+#define BUZZER 4
 
 /*                                    *************************************
  ***************************************      FIREBASE CONFIGURATION      **********************************************
  *                                    *************************************
 */
 
-#define FIREBASE_HOST "https://esp32-562f6-default-rtdb.europe-west1.firebasedatabase.app/"
-#define FIREBASE_AUTH "Q2s7OvUuRKxVg3jgqvo3vs20dxTOTdH7PDNhrba1"
+#define FIREBASE_HOST ""
+#define FIREBASE_AUTH ""
 
 FirebaseData fData;
 FirebaseJson json;
@@ -33,12 +33,15 @@ unsigned long updateTime = 0;
  *                                    *************************************
 */
 #define BLINK_TIME 500
+#define BUZZ_TIME 200
+
 #define MAX_STRING_LENGTH 80 //limiting ssid, psw, email, dev length
 #define STRING_SEPARATOR 0xFD
 AsyncWebServer server(80);
 
 bool CONFIGURATE = true;
 unsigned long timeBlink = millis();
+unsigned long timeBuzz = millis();
 
 const char* ssid_AP     = "FiremanSam-Sensor";
 const char* password_AP = "12345678";
@@ -66,6 +69,16 @@ void led_blink() {
   if (millis() - timeBlink > BLINK_TIME) {
     digitalWrite(LED, !digitalRead(LED));
     timeBlink = millis();
+  }
+}
+
+void buzzer_buzz() {
+  /*
+     @brief it is used to warn in case of fire
+  */
+  if (millis() - timeBuzz > BUZZ_TIME) {
+    digitalWrite(BUZZER, !digitalRead(BUZZER));
+    timeBuzz = millis();
   }
 }
 
@@ -150,7 +163,7 @@ ExtEEPROM ee = ExtEEPROM();
 #define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
 unsigned long start_reset;
 
-void store(String ssid, String password, String email, String device) 
+void store(String ssid, String password, String email, String device)
 {
   String sep = String((char)STRING_SEPARATOR);
   String buff = String(1) + sep + ssid + sep + password + sep + email + sep + device;
@@ -166,7 +179,7 @@ void store(String ssid, String password, String email, String device)
 
 void load() {
   String sep = String((char)STRING_SEPARATOR);
-  
+
   digitalWrite(EEPROM_PIN, HIGH);
   delay(10);
   ee.begin();
@@ -222,10 +235,17 @@ void setup() {
   pinMode(LED, OUTPUT);
   pinMode(RESET_PIN, INPUT);
   pinMode(EEPROM_PIN, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+
+  digitalWrite(LED, LOW);
+  digitalWrite(BUZZER, LOW);
+
+  for (int i = 0; i < 3; i++)
+    buzzer_buzz();
 
   load();
-  
-  if (CONFIGURATE) 
+
+  if (CONFIGURATE)
   { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
       Serial.println("STA Failed to configure");
@@ -241,17 +261,17 @@ void setup() {
     server.onNotFound(notFound);
     server.begin();
   }
-  else 
+  else
   { // LET SENSOR START ITS JOB
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
 
     Serial.print("Attempting to connect to ");
     Serial.print(input_SSID);
-    WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
+    WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
 
-    size_t start_time = millis();
-    size_t dot_time = millis();
+    unsigned long start_time = millis();
+    unsigned long dot_time = millis();
 
     while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
       if (dot_time + 2000 < millis()) {
@@ -279,6 +299,9 @@ void setup() {
     Firebase.reconnectWiFi(true);
     Firebase.setReadTimeout(fData, 1000 * 60);
     Firebase.setwriteSizeLimit(fData, "tiny");
+
+    json.set("/alarm", 0);
+    Firebase.updateNode(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + input_DEVICE, json);
 
     updateTime = millis();
   }
@@ -310,12 +333,27 @@ void reset_monitor() {
 */
 void loop() {
   if (!CONFIGURATE) {
-    
-  
+    if (millis() - updateTime > 300)
+    {
+      Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + input_DEVICE + "/alarm");
+      bool AlarmValue = fData.to<bool>();
+
+      Serial.println(AlarmValue);
+
+      if (AlarmValue) {
+        Serial.println("Allarme");
+        buzzer_buzz();
+      }else
+      {
+        digitalWrite(BUZZER, LOW);
+      }
+
+      updateTime = millis();
+    }
     reset_monitor();
-  } 
-  else 
-  {  
+  }
+  else
+  {
     led_blink();
   }
 }

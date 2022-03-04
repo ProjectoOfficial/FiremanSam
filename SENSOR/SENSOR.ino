@@ -266,10 +266,10 @@ void setup() {
 
     Serial.print("Attempting to connect to ");
     Serial.print(input_SSID);
-    WiFi.begin((char *)&input_SSID, (char *)&input_PASSWORD);
+    WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
 
-    size_t start_time = millis();
-    size_t dot_time = millis();
+    unsigned long start_time = millis();
+    unsigned long dot_time = millis();
 
     while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) 
     {
@@ -428,7 +428,7 @@ void loop()
         Serial.print("\n");
 
         json.set("/score", score);
-        Firebase.updateNode(fData, input_EMAIL+"/"+input_DEVICE, json);
+        Firebase.updateNode(fData, input_EMAIL+ "/" + "SENSORS" + "/"+ input_DEVICE, json);
 
         updateTime = millis();
       }
