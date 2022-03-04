@@ -4,22 +4,24 @@
 #include <FirebaseESP32.h>
 #include "index.h"
 
-#include "ExtEEPROM.h"
+#include <ExtEEPROM.h>
 #include "Wire.h"
 
 #define CONNECT_TIME 20000
 #define TIMEOUTTIME 5000
-#define DELAYTIME 1000
+#define DELAYTIME 100
 
-
+#define LED 12
+#define RESET_PIN 14
+#define BUZZER 23
 
 /*                                    *************************************
  ***************************************      FIREBASE CONFIGURATION      **********************************************
  *                                    *************************************
 */
 
-#define FIREBASE_HOST ""
-#define FIREBASE_AUTH ""
+#define FIREBASE_HOST "https://esp32-562f6-default-rtdb.europe-west1.firebasedatabase.app/"
+#define FIREBASE_AUTH "Q2s7OvUuRKxVg3jgqvo3vs20dxTOTdH7PDNhrba1"
 
 FirebaseData fData;
 FirebaseJson json;
@@ -139,15 +141,10 @@ void configure() {
  *                                    *************************************
 */
 ExtEEPROM ee = ExtEEPROM();
-#define EEPROM_PIN 26
+#define EEPROM_PIN 19
 
-#define CONFIGURED_EEPROM 0
-#define SSID_EEPROM       100
-#define PASSWORD_EEPROM   (SSID_EEPROM + MAX_STRING_LENGTH + 1)
-#define EMAIL_EEPROM      (PASSWORD_EEPROM + MAX_STRING_LENGTH + 1)
-#define DEVICE_EEPROM     (EMAIL_EEPROM + MAX_STRING_LENGTH + 1)
-
-#define STORE_DELAY 2000
+#define STORE_DELAY 300
+#define LOAD_DELAY 50
 #define READ_DELAY  5
 
 #define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
@@ -157,16 +154,25 @@ void store(String ssid, String password, String email, String device)
 {
   String sep = String((char)STRING_SEPARATOR);
   String buff = String(1) + sep + ssid + sep + password + sep + email + sep + device;
+  Serial.println(buff);
   digitalWrite(EEPROM_PIN, HIGH);
+  delay(10);
+  ee.begin();
+  delay(STORE_DELAY);
   ee.EWrite(buff);
   delay(STORE_DELAY);
   digitalWrite(EEPROM_PIN, LOW);
 }
 
 void load() {
-  digitalWrite(EEPROM_PIN, HIGH);
   String sep = String((char)STRING_SEPARATOR);
+  
+  digitalWrite(EEPROM_PIN, HIGH);
+  delay(10);
+  ee.begin();
+  delay(LOAD_DELAY);
   String buff = String(ee.ERead());
+  delay(LOAD_DELAY);
   digitalWrite(EEPROM_PIN, LOW);
 
   Serial.println(buff);
@@ -197,6 +203,9 @@ void load() {
 
 void reset_eeprom() {
   digitalWrite(EEPROM_PIN, HIGH);
+  delay(10);
+  ee.begin();
+  delay(10);
   ee.writeEEPROM(0, (uint8_t) 255);
   delay(10);
   digitalWrite(EEPROM_PIN, LOW);
@@ -214,11 +223,10 @@ void setup() {
   pinMode(RESET_PIN, INPUT);
   pinMode(EEPROM_PIN, OUTPUT);
 
-  ee.begin();
   load();
-  delay(DELAYTIME);
-
-  if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
+  
+  if (CONFIGURATE) 
+  { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
       Serial.println("STA Failed to configure");
     }
@@ -233,7 +241,8 @@ void setup() {
     server.onNotFound(notFound);
     server.begin();
   }
-  else { // LET SENSOR START ITS JOB
+  else 
+  { // LET SENSOR START ITS JOB
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
 
@@ -302,11 +311,11 @@ void reset_monitor() {
 void loop() {
   if (!CONFIGURATE) {
     
-
+  
     reset_monitor();
   } 
   else 
-  {
+  {  
     led_blink();
   }
 }

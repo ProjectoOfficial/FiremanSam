@@ -166,12 +166,6 @@ void configure() {
 ExtEEPROM ee = ExtEEPROM();
 #define EEPROM_PIN 26
 
-#define CONFIGURED_EEPROM 0
-#define SSID_EEPROM       100
-#define PASSWORD_EEPROM   (SSID_EEPROM + MAX_STRING_LENGTH + 1)
-#define EMAIL_EEPROM      (PASSWORD_EEPROM + MAX_STRING_LENGTH + 1)
-#define DEVICE_EEPROM     (EMAIL_EEPROM + MAX_STRING_LENGTH + 1)
-
 #define STORE_DELAY 2000
 #define READ_DELAY  5
 
@@ -182,17 +176,25 @@ void store(String ssid, String password, String email, String device)
 {
   String sep = String((char)STRING_SEPARATOR);
   String buff = String(1) + sep + ssid + sep + password + sep + email + sep + device;
+  Serial.println(buff);
   digitalWrite(EEPROM_PIN, HIGH);
+  delay(10);
+  ee.begin();
+  delay(STORE_DELAY);
   ee.EWrite(buff);
   delay(STORE_DELAY);
   digitalWrite(EEPROM_PIN, LOW);
 }
 
-void load() 
-{
-  digitalWrite(EEPROM_PIN, HIGH);
+void load() {
   String sep = String((char)STRING_SEPARATOR);
+  
+  digitalWrite(EEPROM_PIN, HIGH);
+  delay(10);
+  ee.begin();
+  delay(LOAD_DELAY);
   String buff = String(ee.ERead());
+  delay(LOAD_DELAY);
   digitalWrite(EEPROM_PIN, LOW);
 
   Serial.println(buff);
@@ -240,9 +242,7 @@ void setup() {
   pinMode(RESET_PIN, INPUT);
   pinMode(EEPROM_PIN, OUTPUT);
 
-  ee.begin();
   load();
-  delay(DELAYTIME);
 
   if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
     if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) 

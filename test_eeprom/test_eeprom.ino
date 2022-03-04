@@ -4,14 +4,14 @@ ExtEEPROM ee = ExtEEPROM();
 void setup(void)
 {
   Serial.begin(115200);
-  pinMode(26,OUTPUT);
-  digitalWrite(26,HIGH);
+  pinMode(19,OUTPUT);
+  digitalWrite(19,HIGH);
 
   unsigned int address = 4000;
-
+String sep = String((char)0xFD);
   ee.begin();
   delay(100);
-  ee.EWrite("Frengo0000000041dcadbzgjjfhxkt7e5yehzseqg");
+  ee.EWrite("1"+sep+"Linkem_682B6C"+sep+"poletta2598"+sep+"daniel_r@live.it"+sep+"Mansarda");
   delay(300);
   Serial.println(String(ee.ERead()));
 
