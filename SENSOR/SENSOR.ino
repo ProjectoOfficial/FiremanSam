@@ -43,7 +43,7 @@ float devs[] = {1.60017988e+02, 1.79208068e+01, 2.22233383e+06, 7.23209521e+06};
 FirebaseData fData;
 FirebaseJson json;
 
-size_t updateTime = 0;
+unsigned long updateTime = 0;
 
 /*                                    *************************************
  ***************************************    WEBSERVER CONFIGURATION      **********************************************
@@ -55,7 +55,7 @@ size_t updateTime = 0;
 AsyncWebServer server(80);
 
 bool CONFIGURATE = true;
-size_t timeBlink = millis();
+unsigned long timeBlink = millis();
 
 const char* ssid_AP     = "FiremanSam-Sensor";
 const char* password_AP = "12345678";
@@ -176,7 +176,7 @@ ExtEEPROM ee = ExtEEPROM();
 #define READ_DELAY  5
 
 #define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
-size_t start_reset;
+unsigned long start_reset;
 
 void store(String ssid, String password, String email, String device) 
 {
@@ -221,7 +221,7 @@ void load()
     CONFIGURATE = false;
 }
 
-void reset() {
+void reset_eeprom() {
   digitalWrite(EEPROM_PIN, HIGH);
   ee.writeEEPROM(0, (uint8_t) 255);
   delay(10);
@@ -378,7 +378,7 @@ void reset_monitor() {
         digitalWrite(LED, !digitalRead(LED));
         delay(100);
       }
-      reset();
+      reset_eeprom();
     }
   } 
   else 
