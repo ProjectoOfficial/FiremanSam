@@ -75,18 +75,21 @@ String error = "";
 IPAddress IPAddress_AP(192, 168, 1, 1);
 IPAddress subnet_AP(255, 255, 255, 0);
 
-void led_blink() {
+void led_blink() 
+{
   /*
      @brief it is used for showing to the user that the device
             is in configuration mode
   */
-  if (millis() - timeBlink > BLINK_TIME) {
+  if (millis() - timeBlink > BLINK_TIME) 
+  {
     digitalWrite(LED, !digitalRead(LED));
     timeBlink = millis();
   }
 }
 
-void notFound(AsyncWebServerRequest *request) {
+void notFound(AsyncWebServerRequest *request) 
+{
   request->send(404, "text/plain", "Not found");
 }
 
@@ -97,12 +100,14 @@ void configure() {
   */
 
   //ROOT PAGE REDIRECT TO SETUP PAGE
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     request->send_P(200, "text/html", setup_html);
   });
 
   //SETUP PAGE
-  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     error = "";
 
     //WiFi SSID
@@ -136,7 +141,8 @@ void configure() {
 
     if (error != "")
       request->send(200, "text/html", fail_html1 + error + fail_html2);
-    else {
+    else 
+    {
       store(input_SSID, input_PASSWORD, input_EMAIL, input_DEVICE);
       request->send(200, "text/html", success_html);
     }
@@ -172,7 +178,8 @@ ExtEEPROM ee = ExtEEPROM();
 #define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
 size_t start_reset;
 
-void store(String ssid, String password, String email, String device) {
+void store(String ssid, String password, String email, String device) 
+{
   String sep = String((char)STRING_SEPARATOR);
   String buff = String(1) + sep + ssid + sep + password + sep + email + sep + device;
   digitalWrite(EEPROM_PIN, HIGH);
@@ -181,7 +188,8 @@ void store(String ssid, String password, String email, String device) {
   digitalWrite(EEPROM_PIN, LOW);
 }
 
-void load() {
+void load() 
+{
   digitalWrite(EEPROM_PIN, HIGH);
   String sep = String((char)STRING_SEPARATOR);
   String buff = String(ee.ERead());
@@ -237,7 +245,8 @@ void setup() {
   delay(DELAYTIME);
 
   if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
-    if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
+    if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) 
+    {
       Serial.println("STA Failed to configure");
     }
 
@@ -262,8 +271,10 @@ void setup() {
     size_t start_time = millis();
     size_t dot_time = millis();
 
-    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
-      if (dot_time + 2000 < millis()) {
+    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) 
+    {
+      if (dot_time + 2000 < millis()) 
+      {
         Serial.print(".");
         dot_time = millis();
       }
@@ -272,7 +283,8 @@ void setup() {
         break;
     }
 
-    if (WiFi.status() != WL_CONNECTED) {
+    if (WiFi.status() != WL_CONNECTED)
+    {
       Serial.println(" cannot connect to WiFi!");
       while (true)
         reset_monitor();
@@ -305,11 +317,13 @@ void setup() {
  ***************************************           DHT11 READ            **********************************************
  *                                    *************************************
 */
-void readDHT11(float *h, float *t) {
+void readDHT11(float *h, float *t) 
+{
   *h = dht.readHumidity();
   float temp = dht.readTemperature();
 
-  if (isnan(*h) || isnan(temp)) {
+  if (isnan(*h) || isnan(temp)) 
+  {
     Serial.println(F("Failed to read from DHT sensor!"));
   }
 
@@ -326,8 +340,10 @@ void readDHT11(float *h, float *t) {
  ***************************************           CCS811 READ           **********************************************
  *                                    *************************************
 */
-void readCC811(int *co2, int *tvoc) {
-  if (cc811.checkDataReady() == true) {
+void readCC811(int *co2, int *tvoc) 
+{
+  if (cc811.checkDataReady() == true) 
+  {
     *co2 = cc811.getCO2PPM();
     *tvoc = cc811.getTVOCPPB();
     Serial.print("CO2: ");
@@ -336,7 +352,9 @@ void readCC811(int *co2, int *tvoc) {
     Serial.print(*tvoc);
     Serial.println("ppb");
 
-  } else {
+  } 
+  else 
+  {
     Serial.println("Data is not ready!");
   }
   cc811.writeBaseLine(0x847B);
@@ -347,15 +365,24 @@ void readCC811(int *co2, int *tvoc) {
 */
 
 void reset_monitor() {
-  if (digitalRead(RESET_PIN)) {
-    if (millis() - start_reset > RESET_DELAY) {
-      for (int i = 0; i < 10; i++) {
+  /*
+   * @brief this function monitors the reset button which
+   *        brings the device back to factory state
+  */
+  if (digitalRead(RESET_PIN)) 
+  {
+    if (millis() - start_reset > RESET_DELAY) 
+    {
+      for (int i = 0; i < 10; i++) 
+      {
         digitalWrite(LED, !digitalRead(LED));
         delay(100);
       }
       reset();
     }
-  } else {
+  } 
+  else 
+  {
     start_reset = millis();
   }
 }
@@ -364,16 +391,20 @@ void reset_monitor() {
  ***************************************            VOID LOOP            **********************************************
  *                                    *************************************
 */
-void loop() {
-  if (!CONFIGURATE) {
-    if (millis() - updateTime > 500) {
+void loop() 
+{
+  if (!CONFIGURATE) 
+  {
+    if (millis() - updateTime > 500) 
+    {
       float humidity, temperature ;
       int co2 = 0, tvoc = 0;
 
       readDHT11(&humidity, &temperature);
       readCC811(&co2, &tvoc);
 
-      if (co2 != 0) {
+      if (co2 != 0) 
+      {
         float datas[] = {humidity, temperature, co2, tvoc};
         float score = 0;
 
@@ -388,7 +419,8 @@ void loop() {
           Serial.println("\nFire detected!");
           digitalWrite(LED, HIGH);
         }
-        else {
+        else 
+        {
           Serial.println("\nNothing");
           digitalWrite(LED, LOW);
         }
@@ -403,7 +435,9 @@ void loop() {
     }
 
     reset_monitor();
-  } else {
+  } 
+  else 
+  {
     led_blink();
   }
 }
