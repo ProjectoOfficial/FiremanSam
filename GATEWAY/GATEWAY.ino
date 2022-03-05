@@ -294,22 +294,8 @@ void setup() {
     // LET GATEWAY START ITS JOB
     Serial.print("Attempting to connect to ");
     Serial.println(input_SSID);
-    int ssid_length = input_SSID.length();
-    int psw_length = input_PASSWORD.length();
-
-    char* ssid = (char *)malloc(input_SSID.length()+1);
-    char* psw = (char *)malloc(input_PASSWORD.length()+1);
-    input_SSID.toCharArray(ssid, input_SSID.length()+1);
-    input_PASSWORD.toCharArray(psw, input_PASSWORD.length()+1);
     
-    Serial.print(input_SSID);
-    Serial.print(input_SSID.length());
-    Serial.println("\n");
-    Serial.print(input_PASSWORD);
-    Serial.print(input_PASSWORD.length());
-    Serial.println("\n");
-    
-    WiFi.begin(ssid, psw);
+    WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
 
     IPAddress primaryDNS(8, 8, 8, 8);
     IPAddress secondaryDNS(8, 8, 4, 4);
@@ -317,22 +303,30 @@ void setup() {
       Serial.println("STA Failed to configure");
     }
 
-    size_t start_time = millis();
-    size_t dot_time = millis();
-    /*
-    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
-      if (dot_time + 250 < millis()) {
+    unsigned long start_time = millis();
+    unsigned long dot_time = millis();
+
+    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) 
+    {
+      if (dot_time + 2000 < millis()) 
+      {
         Serial.print(".");
         dot_time = millis();
       }
+
+      if (WiFi.status() == WL_CONNECT_FAILED)
+        break;
     }
-    */
-    while ((WiFi.status() != WL_CONNECTED)) {
-      Serial.print(".");
-      delay(300);
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      Serial.println(" cannot connect to WiFi!");
+      while (true)
     }
+
     Serial.println("WiFi Connected!");
     Serial.println(WiFi.localIP());
+
     Gateway();
     server.onNotFound(notFound);
     server.begin();
