@@ -12,8 +12,7 @@
 #include "Wire.h"
 
 #define CONNECT_TIME 20000
-#define TIMEOUTTIME 5000
-#define DELAYTIME 1000
+#define DELAYTIME 100
 
 /*                                    *************************************
  ***************************************      SENSORS CONFIGURATION      **********************************************
@@ -93,7 +92,8 @@ void notFound(AsyncWebServerRequest *request)
   request->send(404, "text/plain", "Not found");
 }
 
-void configure() {
+void configure() 
+{
   /*
      @brief implements the configuration webserver. It is used for
             configuring the FiremanSensor for user's local network
@@ -149,12 +149,14 @@ void configure() {
   });
 
   //ERROR PAGE
-  server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     request->send(200, "text/html", setup_html);
   });
 
   //SUCCESS PAGE
-  server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     ESP.restart();
   });
 }
@@ -186,7 +188,8 @@ void store(String ssid, String password, String email, String device)
   digitalWrite(EEPROM_PIN, LOW);
 }
 
-void load() {
+void load() 
+{
   String sep = String((char)STRING_SEPARATOR);
   
   digitalWrite(EEPROM_PIN, HIGH);
@@ -213,18 +216,16 @@ void load() {
   buff.remove(0, input_EMAIL.length() + 1);
   input_DEVICE = buff;
 
-  Serial.println(conf);
-  Serial.println(input_SSID);
-  Serial.println(input_PASSWORD);
-  Serial.println(input_EMAIL);
-  Serial.println(input_DEVICE);
-
   if (conf == String(1))
     CONFIGURATE = false;
 }
 
-void reset_eeprom() {
+void reset_eeprom() 
+{
   digitalWrite(EEPROM_PIN, HIGH);
+  delay(10);
+  ee.begin();
+  delay(10);
   ee.writeEEPROM(0, (uint8_t) 255);
   delay(10);
   digitalWrite(EEPROM_PIN, LOW);
@@ -235,7 +236,8 @@ void reset_eeprom() {
  ***************************************           VOID SETUP            **********************************************
  *                                    *************************************
 */
-void setup() {
+void setup() 
+{
   Serial.begin(115200);
 
   pinMode(LED, OUTPUT);
@@ -329,11 +331,6 @@ void readDHT11(float *h, float *t)
 
   *t = dht.computeHeatIndex(temp, *h, false);
 
-  Serial.print(F("Humidity: "));
-  Serial.print(*h);
-  Serial.print(F("%  Temperature: "));
-  Serial.print(*t);
-  Serial.print(F("°C "));
 }
 
 /*                                    *************************************
@@ -346,12 +343,6 @@ void readCC811(int *co2, int *tvoc)
   {
     *co2 = cc811.getCO2PPM();
     *tvoc = cc811.getTVOCPPB();
-    Serial.print("CO2: ");
-    Serial.print(*co2);
-    Serial.print("ppm, TVOC: ");
-    Serial.print(*tvoc);
-    Serial.println("ppb");
-
   } 
   else 
   {
@@ -364,7 +355,8 @@ void readCC811(int *co2, int *tvoc)
  *                                    *************************************
 */
 
-void reset_monitor() {
+void reset_monitor() 
+{
   /*
    * @brief this function monitors the reset button which
    *        brings the device back to factory state
@@ -421,7 +413,7 @@ void loop()
         }
         else 
         {
-          Serial.println("\nNothing");
+          Serial.println("\nEverything is fine");
           digitalWrite(LED, LOW);
         }
 

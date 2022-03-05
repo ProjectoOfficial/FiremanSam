@@ -8,7 +8,6 @@
 #include "Wire.h"
 
 #define CONNECT_TIME 20000
-#define TIMEOUTTIME 5000
 #define DELAYTIME 100
 
 #define LED 12
@@ -61,28 +60,33 @@ String error = "";
 IPAddress IPAddress_AP(192, 168, 1, 1);
 IPAddress subnet_AP(255, 255, 255, 0);
 
-void led_blink() {
+void led_blink() 
+{
   /*
      @brief it is used for showing to the user that the device
             is in configuration mode
   */
-  if (millis() - timeBlink > BLINK_TIME) {
+  if (millis() - timeBlink > BLINK_TIME) 
+  {
     digitalWrite(LED, !digitalRead(LED));
     timeBlink = millis();
   }
 }
 
-void buzzer_buzz() {
+void buzzer_buzz() 
+{
   /*
      @brief it is used to warn in case of fire
   */
-  if (millis() - timeBuzz > BUZZ_TIME) {
+  if (millis() - timeBuzz > BUZZ_TIME) 
+  {
     digitalWrite(BUZZER, !digitalRead(BUZZER));
     timeBuzz = millis();
   }
 }
 
-void notFound(AsyncWebServerRequest *request) {
+void notFound(AsyncWebServerRequest *request) 
+{
   request->send(404, "text/plain", "Not found");
 }
 
@@ -93,12 +97,14 @@ void configure() {
   */
 
   //ROOT PAGE REDIRECT TO SETUP PAGE
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     request->send_P(200, "text/html", setup_html);
   });
 
   //SETUP PAGE
-  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     error = "";
 
     //WiFi SSID
@@ -139,12 +145,14 @@ void configure() {
   });
 
   //ERROR PAGE
-  server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     request->send(200, "text/html", setup_html);
   });
 
   //SUCCESS PAGE
-  server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) 
+  {
     ESP.restart();
   });
 }
@@ -158,7 +166,6 @@ ExtEEPROM ee = ExtEEPROM();
 
 #define STORE_DELAY 300
 #define LOAD_DELAY 50
-#define READ_DELAY  5
 
 #define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
 unsigned long start_reset;
@@ -177,7 +184,8 @@ void store(String ssid, String password, String email, String device)
   digitalWrite(EEPROM_PIN, LOW);
 }
 
-void load() {
+void load() 
+{
   String sep = String((char)STRING_SEPARATOR);
 
   digitalWrite(EEPROM_PIN, HIGH);
@@ -204,17 +212,12 @@ void load() {
   buff.remove(0, input_EMAIL.length() + 1);
   input_DEVICE = buff;
 
-  Serial.println(conf);
-  Serial.println(input_SSID);
-  Serial.println(input_PASSWORD);
-  Serial.println(input_EMAIL);
-  Serial.println(input_DEVICE);
-
   if (conf == String(1))
     CONFIGURATE = false;
 }
 
-void reset_eeprom() {
+void reset_eeprom() 
+{
   digitalWrite(EEPROM_PIN, HIGH);
   delay(10);
   ee.begin();
@@ -229,7 +232,8 @@ void reset_eeprom() {
  ***************************************           VOID SETUP            **********************************************
  *                                    *************************************
 */
-void setup() {
+void setup() 
+{
   Serial.begin(115200);
 
   pinMode(LED, OUTPUT);
@@ -240,14 +244,12 @@ void setup() {
   digitalWrite(LED, LOW);
   digitalWrite(BUZZER, LOW);
 
-  for (int i = 0; i < 3; i++)
-    buzzer_buzz();
-
   load();
 
   if (CONFIGURATE)
   { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
-    if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
+    if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) 
+    {
       Serial.println("STA Failed to configure");
     }
 
@@ -273,7 +275,8 @@ void setup() {
     unsigned long start_time = millis();
     unsigned long dot_time = millis();
 
-    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
+    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) 
+    {
       if (dot_time + 2000 < millis()) {
         Serial.print(".");
         dot_time = millis();
@@ -313,10 +316,18 @@ void setup() {
  *                                    *************************************
 */
 
-void reset_monitor() {
-  if (digitalRead(RESET_PIN)) {
-    if (millis() - start_reset > RESET_DELAY) {
-      for (int i = 0; i < 10; i++) {
+void reset_monitor() 
+{
+  /*
+   * @brief this function monitors the reset button which
+   *        brings the device back to factory state
+  */
+  if (digitalRead(RESET_PIN)) 
+  {
+    if (millis() - start_reset > RESET_DELAY) 
+    {
+      for (int i = 0; i < 10; i++) 
+      {
         digitalWrite(LED, !digitalRead(LED));
         delay(100);
       }
@@ -331,8 +342,10 @@ void reset_monitor() {
  ***************************************            VOID LOOP            **********************************************
  *                                    *************************************
 */
-void loop() {
-  if (!CONFIGURATE) {
+void loop() 
+{
+  if (!CONFIGURATE) 
+  {
     if (millis() - updateTime > 300)
     {
       Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + input_DEVICE + "/alarm");
@@ -340,8 +353,9 @@ void loop() {
 
       Serial.println(AlarmValue);
 
-      if (AlarmValue) {
-        Serial.println("Allarme");
+      if (AlarmValue) 
+      {
+        Serial.println("Fire detected!");
         buzzer_buzz();
       }else
       {
