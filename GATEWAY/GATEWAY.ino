@@ -1,7 +1,14 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <Firebase_ESP_Client.h>
 #include "index.h"
+
+//Provide the token generation process info.
+#include "addons/TokenHelper.h"
+//Provide the RTDB payload printing info and other helper functions.
+#include "addons/RTDBHelper.h"
+
 
 
 //***********************SD CARD CONFIGURATION********************
@@ -16,7 +23,22 @@
 
 const String CONFIG_FILE = "/config.txt";
 const String PAIRS_FILE = "/pairs.txt";
+const String SENSORS_FILE = "/sensors.txt";
+const String ACTUATORS_FILE = "/actuators.txt";
 
+// *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
+
+// Insert Firebase project API Key
+#define API_KEY "AIzaSyD6MKeB3vuJf1PuS1DuRfMDakizPT5NSvk"
+
+// Insert RTDB URLefine the RTDB URL */
+#define DATABASE_URL "https://provofirebase-default-rtdb.europe-west1.firebasedatabase.app/" 
+
+//Define Firebase Data objects
+FirebaseData fbdo;
+
+FirebaseAuth auth;
+FirebaseConfig config;
 // *********************WEB SERVER CONFIGURATION******************
 #define CONNECT_TIME 10000
 #define TIMEOUTTIME 5000
@@ -272,11 +294,20 @@ void setup() {
     // LET GATEWAY START ITS JOB
     Serial.print("Attempting to connect to ");
     Serial.println(input_SSID);
+    int ssid_length = input_SSID.length();
+    int psw_length = input_PASSWORD.length();
 
-    char* ssid = (char *)malloc(input_SSID.length());
-    char* psw = (char *)malloc(input_PASSWORD.length());
-    input_SSID.toCharArray(ssid, input_SSID.length());
-    input_PASSWORD.toCharArray(psw, input_PASSWORD.length());
+    char* ssid = (char *)malloc(input_SSID.length()+1);
+    char* psw = (char *)malloc(input_PASSWORD.length()+1);
+    input_SSID.toCharArray(ssid, input_SSID.length()+1);
+    input_PASSWORD.toCharArray(psw, input_PASSWORD.length()+1);
+    
+    Serial.print(input_SSID);
+    Serial.print(input_SSID.length());
+    Serial.println("\n");
+    Serial.print(input_PASSWORD);
+    Serial.print(input_PASSWORD.length());
+    Serial.println("\n");
     
     WiFi.begin(ssid, psw);
 
@@ -288,11 +319,17 @@ void setup() {
 
     size_t start_time = millis();
     size_t dot_time = millis();
+    /*
     while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
       if (dot_time + 250 < millis()) {
         Serial.print(".");
         dot_time = millis();
       }
+    }
+    */
+    while ((WiFi.status() != WL_CONNECTED)) {
+      Serial.print(".");
+      delay(300);
     }
     Serial.println("WiFi Connected!");
     Serial.println(WiFi.localIP());
@@ -300,6 +337,48 @@ void setup() {
     server.onNotFound(notFound);
     server.begin();
   }
+
+  //***************************FIREBASE INITIALIZATION************************
+  Serial.println("Starting Firebase Communication:\n");
+  /* Assign the api key (required) */
+  config.api_key = API_KEY;
+
+  /* Assign the RTDB URL (required) */
+  config.database_url = DATABASE_URL;
+  bool signupOK = false;
+
+  /* Sign up */
+  if (Firebase.signUp(&config, &auth, "", "")){
+    Serial.println("ok");
+    signupOK = true;
+  }
+  else{
+    Serial.printf("%s\n", config.signer.signupError.message.c_str());
+    Serial.println("Mi sono bloccato nel Firebase.signUP.\n");
+  }
+
+  /* Assign the callback function for the long running token generation task */
+  config.token_status_callback = tokenStatusCallback; //see addons/TokenHelper.h
+
+  Serial.println("Ora vado a scrivere su Firebase.\n");
+  Firebase.begin(&config, &auth);
+  Serial.println("Firebase.begin:\n");
+  
+  Firebase.reconnectWiFi(true);
+  delay(1000);
+  //now we use the input_EMAIL entered by the user to look for his folder in the
+  //firebase database, if it's not there, we just create
+  float test_value = 1.0;
+  if (Firebase.RTDB.setFloat(&fbdo, "casaRiki/score", test_value)){
+      Serial.println("PASSED");
+      Serial.println("PATH: " + fbdo.dataPath());
+      Serial.println("TYPE: " + fbdo.dataType());
+    }
+    else {
+      Serial.println("FAILED");
+      Serial.println("REASON: " + fbdo.errorReason());
+    }
+  
 }
 
 
