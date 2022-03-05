@@ -35,7 +35,6 @@ float devs[] = {1.60017988e+02, 1.79208068e+01, 2.22233383e+06, 7.23209521e+06};
  ***************************************      FIREBASE CONFIGURATION      **********************************************
  *                                    *************************************
 */
-
 #define FIREBASE_HOST ""
 #define FIREBASE_AUTH ""
 
@@ -169,7 +168,7 @@ ExtEEPROM ee = ExtEEPROM();
 #define EEPROM_PIN 26
 
 #define STORE_DELAY 2000
-#define READ_DELAY  5
+#define LOAD_DELAY 50
 
 #define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
 unsigned long start_reset;
