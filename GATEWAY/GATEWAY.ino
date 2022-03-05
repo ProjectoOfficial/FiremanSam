@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -29,10 +30,10 @@ const String ACTUATORS_FILE = "/actuators.txt";
 // *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
 
 // Insert Firebase project API Key
-#define API_KEY "AIzaSyD6MKeB3vuJf1PuS1DuRfMDakizPT5NSvk"
+#define API_KEY "AIzaSyA6SiyB5rKwcRLYpYKGo3iMlJQZeh6MCWQ"
 
 // Insert RTDB URLefine the RTDB URL */
-#define DATABASE_URL "https://provofirebase-default-rtdb.europe-west1.firebasedatabase.app/" 
+#define DATABASE_URL "https://fir-test-gateway-default-rtdb.europe-west1.firebasedatabase.app/" 
 
 //Define Firebase Data objects
 FirebaseData fbdo;
@@ -321,7 +322,7 @@ void setup() {
     if (WiFi.status() != WL_CONNECTED)
     {
       Serial.println(" cannot connect to WiFi!");
-      while (true)
+      while (true){}
     }
 
     Serial.println("WiFi Connected!");
@@ -363,7 +364,7 @@ void setup() {
   //now we use the input_EMAIL entered by the user to look for his folder in the
   //firebase database, if it's not there, we just create
   float test_value = 1.0;
-  if (Firebase.RTDB.setFloat(&fbdo, "casaRiki/score", test_value)){
+  if (Firebase.RTDB.setFloat(&fbdo, "ciccioPasticcio", test_value)){
       Serial.println("PASSED");
       Serial.println("PATH: " + fbdo.dataPath());
       Serial.println("TYPE: " + fbdo.dataType());
