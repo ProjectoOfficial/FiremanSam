@@ -23,10 +23,10 @@ const String ACTUATORS_FILE = "/actuators.txt";
 // *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
 
 // Insert Firebase project API Key
-#define FIREBASE_AUTH "AIzaSyA6SiyB5rKwcRLYpYKGo3iMlJQZeh6MCWQ"
+#define FIREBASE_AUTH ""
 
 // Insert RTDB URLefine the RTDB URL */
-#define FIREBASE_HOST "https://fir-test-gateway-default-rtdb.europe-west1.firebasedatabase.app/" 
+#define FIREBASE_HOST ""
 
 //Define Firebase Data objects
 FirebaseData fData;
@@ -260,7 +260,7 @@ void SD_Update_data() {
     file.close();
     return;
   }
-  
+
   file.close();
 }
 // **************************VOID SETUP****************************
@@ -287,7 +287,7 @@ void setup() {
     // LET GATEWAY START ITS JOB
     Serial.print("Attempting to connect to ");
     Serial.println(input_SSID);
-    
+
     WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
 
     IPAddress primaryDNS(8, 8, 8, 8);
@@ -299,9 +299,9 @@ void setup() {
     unsigned long start_time = millis();
     unsigned long dot_time = millis();
 
-    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) 
+    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis())
     {
-      if (dot_time + 2000 < millis()) 
+      if (dot_time + 2000 < millis())
       {
         Serial.print(".");
         dot_time = millis();
@@ -314,7 +314,7 @@ void setup() {
     if (WiFi.status() != WL_CONNECTED)
     {
       Serial.println(" cannot connect to WiFi!");
-      while (true){}
+      while (true) {}
     }
 
     Serial.println("WiFi Connected!");
@@ -333,7 +333,7 @@ void setup() {
   Firebase.setReadTimeout(fData, 1000 * 60);
   Firebase.setwriteSizeLimit(fData, "tiny");
   delay(1000);
-  
+
 }
 
 
@@ -341,15 +341,20 @@ void setup() {
 void loop() {
 
   //tienes el calor
-  bool score = true;
-  json.set("/score", score);
+  json.set("/alarm", 1);
 
   //SCRITTURA
   // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
-  Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
-
+  //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
+  Firebase.updateNode(fData, "Daniel_r" + "/" + "ACTUATORS" + "/" + "Mansarda", json);
+  
+  json.set("/score", -1);
+  Firebase.updateNode(fData, "Daniel_r" + "/" + "SENSORS" + "/" + "Mansarda", json);
+  
+  
   //LETTURA
-  Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "PROVA" + "/alarm");
+  //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
+  Firebase.getBool(fData, "Daniel_r" + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
   bool AlarmValue = fData.to<bool>();
 
   Serial.println(AlarmValue);
