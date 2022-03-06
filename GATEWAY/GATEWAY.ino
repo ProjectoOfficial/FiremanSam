@@ -6,6 +6,9 @@
 #include "index.h"
 
 #define RESET_PIN 4
+#define RED 32
+#define GREEN 35
+#define BLUE 34
 
 //***********************SD CARD CONFIGURATION********************
 #include "FS.h"
@@ -17,6 +20,8 @@
 #define SD_CS 5
 #define SD_CLK 18
 
+#define RESET_DELAY 3000 //3 secondi per resettare la SD
+
 const String CONFIG_FILE = "/config.txt";
 const String PAIRS_FILE = "/pairs.txt";
 const String SENSORS_FILE = "/sensors.txt";
@@ -24,15 +29,14 @@ const String ACTUATORS_FILE = "/actuators.txt";
 
 unsigned long start_reset;
 
-  #define RESET_DELAY 3000 //3 secondi per resettare la SD
 
 // *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
 
 // Insert Firebase project API Key
-#define FIREBASE_AUTH ""
+#define FIREBASE_AUTH "7i1dpSEfmefSNWJ9BZr26QW78gtCuSbbN8vUCAz7"
 
 // Insert RTDB URLefine the RTDB URL */
-#define FIREBASE_HOST ""
+#define FIREBASE_HOST "https://firemansam-459c0-default-rtdb.europe-west1.firebasedatabase.app/"
 
 //Define Firebase Data objects
 FirebaseData fData;
@@ -183,11 +187,11 @@ void Gateway() {
 }
 
 // **************************SD CARD SETUP****************************
-void SDCard_Setup() {
+int SDCard_Setup() {
   Serial.println("SD CARD SETUP");
   if (!SD.begin(SD_CS)) {
     Serial.println("Card Mount Failed");
-    return;
+    return -1;
   } else
     Serial.println("SD Card Found!");
 
@@ -195,7 +199,7 @@ void SDCard_Setup() {
 
   if (cardType == CARD_NONE) {
     Serial.println("No SD card attached");
-    return;
+    return -1;
   }
 
   Serial.print("SD Card Type: ");
@@ -213,6 +217,8 @@ void SDCard_Setup() {
   Serial.print("SD Card Size: ");
   Serial.print(cardSize, 3);
   Serial.println("MB");
+
+  return 1;
 }
 
 
@@ -220,6 +226,7 @@ void SDCard_Setup() {
 void SD_get_data() {
   if (!SD.exists(CONFIG_FILE)) {
     Serial.println("Failed to load data, Config File doesn't exist");
+    CONFIGURATE = true;
     return;
   }
 
@@ -284,22 +291,22 @@ void SD_get_data() {
  *                                    *************************************
 */
 
-void reset_monitor() 
+void reset_monitor()
 {
   /*
-   * @brief this function monitors the reset button which
-   *        brings the device back to factory state
+     @brief this function monitors the reset button which
+            brings the device back to factory state
   */
-  if (digitalRead(RESET_PIN)) 
+  if (digitalRead(RESET_PIN))
   {
-    if (millis() - start_reset > RESET_DELAY) 
+    if (millis() - start_reset > RESET_DELAY)
     {
-      for (int i = 0; i < 10; i++) 
+      for (int i = 0; i < 10; i++)
       {
-        //digitalWrite(LED, !digitalRead(LED));
+        digitalWrite(BLUE, !digitalRead(BLUE));
         delay(100);
       }
-      //reset_eeprom();
+      SD.remove(CONFIG_FILE);
     }
   } else {
     start_reset = millis();
@@ -310,7 +317,13 @@ void reset_monitor()
 // **************************VOID SETUP****************************
 void setup() {
   Serial.begin(115200);
-  SDCard_Setup();
+  if (SDCard_Setup() < 0) {
+    Serial.println("SD Card error, cannot proceed");
+    while (1)
+    {
+      reset_monitor();
+    }
+  }
   SD_get_data();
 
   if (CONFIGURATE) {
@@ -360,7 +373,10 @@ void setup() {
     if (WiFi.status() != WL_CONNECTED)
     {
       Serial.println(" cannot connect to WiFi!");
-      while (true) {}
+      while (true)
+      {
+        reset_monitor();
+      }
     }
 
     Serial.println("WiFi Connected!");
