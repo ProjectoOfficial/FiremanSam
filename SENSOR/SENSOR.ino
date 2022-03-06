@@ -35,8 +35,8 @@ float devs[] = {1.60017988e+02, 1.79208068e+01, 2.22233383e+06, 7.23209521e+06};
  ***************************************      FIREBASE CONFIGURATION      **********************************************
  *                                    *************************************
 */
-#define FIREBASE_HOST ""
-#define FIREBASE_AUTH ""
+#define FIREBASE_HOST "https://firemansam-459c0-default-rtdb.europe-west1.firebasedatabase.app/"
+#define FIREBASE_AUTH "7i1dpSEfmefSNWJ9BZr26QW78gtCuSbbN8vUCAz7"
 
 FirebaseData fData;
 FirebaseJson json;
@@ -267,7 +267,7 @@ void setup()
 
     Serial.print("Attempting to connect to ");
     Serial.print(input_SSID);
-    WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
+    WiFi.begin(input_SSID.c_str() input_PASSWORD.c_str());
 
     unsigned long start_time = millis();
     unsigned long dot_time = millis();

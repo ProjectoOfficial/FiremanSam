@@ -276,25 +276,17 @@ int SD_get_data() {
     }
   }
 
-  char* GWIP = (char *)malloc(input_IP.length());
-  char* RIP = (char *)malloc(input_ROUTER.length());
-  char* MASK = (char *)malloc(input_SUBNET.length());
-
-  input_IP.toCharArray(GWIP, input_IP.length());
-  input_ROUTER.toCharArray(RIP, input_ROUTER.length());
-  input_SUBNET.toCharArray(MASK, input_SUBNET.length());
-
-  if (!Gateway_IP.fromString((const char*)GWIP)) {
+  if (!Gateway_IP.fromString(input_IP.c_str())) {
     Serial.println("Failed to retrieve Gateway IP Address from SD");
     file.close();
     return -1;
   }
-  if (!Router_IP.fromString((const char*)RIP)) {
+  if (!Router_IP.fromString(input_ROUTER.c_str())) {
     Serial.println("Failed to retrieve Router IP Address from SD");
     file.close();
     return -1;
   }
-  if (!Subnet.fromString((const char*)MASK)) {
+  if (!Subnet.fromString(input_SUBNET.c_str())) {
     Serial.println("Failed to retrieve Subnet Mask from SD");
     file.close();
     return -1;
@@ -375,6 +367,10 @@ void setup() {
     WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
 
 
+    Serial.println("");
+    Serial.println(input_IP);
+    Serial.println(input_ROUTER);
+    Serial.println("");
     Serial.println(Gateway_IP);
     Serial.println(Subnet);
     Serial.println(Router_IP);
@@ -441,22 +437,17 @@ void loop() {
     digitalWrite(RED, HIGH);
     if (millis() - updateTime > 300)
     {
-      Serial.println("1");
       //tienes el calor
       json.set("/alarm", 1);
 
-      Serial.println("2");
       //SCRITTURA
       // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
       //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
       Firebase.updateNode(fData, "Daniel_r/ACTUATORS/Mansarda", json);
 
-      Serial.println("3");
       json.set("/score", -1);
       Firebase.updateNode(fData, "Daniel_r/SENSORS/Mansarda", json);
 
-
-      Serial.println("4");
       //LETTURA
       //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
       Firebase.getBool(fData, "Daniel_r/ACTUATORS/Mansarda/alarm");
