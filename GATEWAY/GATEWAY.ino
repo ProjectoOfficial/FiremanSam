@@ -39,7 +39,6 @@ void led_blink()
 #define RESET_DELAY 3000 //3 secondi per resettare la SD
 
 const String CONFIG_FILE = "/config.txt";
-const String PAIRS_FILE = "/pairs.txt";
 const String SENSORS_FILE = "/sensors.txt";
 const String ACTUATORS_FILE = "/actuators.txt";
 
@@ -159,6 +158,26 @@ void configure() {
       request->send(200, "text/html", fail_html1 + error + fail_html2);
     else
       request->send(200, "text/html", success_html);
+
+    if (SD.exists(CONFIG_FILE))
+      SD.remove(CONFIG_FILE);
+
+    File file = SD.open(CONFIG_FILE, FILE_WRITE);
+
+    if (!file) {
+      Serial.println("failed to create the CONFIG file");
+      while (1);
+    }
+    String message = input_SSID + "\n" + input_PASSWORD + "\n" + input_EMAIL + "\n" + input_IP + "\n" + input_ROUTER + "\n" + input_SUBNET + "\n";
+    if (!file.print(message)) {
+      Serial.println("failed to save CONFIG file");
+      while (1)
+      {
+        reset_monitor();
+      }
+    }
+
+    file.close();
   });
 
   //ERROR PAGE
@@ -169,26 +188,6 @@ void configure() {
 
   //SUCCESS PAGE
   server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) {
-    if (SD.exists(CONFIG_FILE))
-      SD.remove(CONFIG_FILE);
-    if (SD.exists(PAIRS_FILE))
-      SD.remove(PAIRS_FILE);
-
-    File file = SD.open(CONFIG_FILE, FILE_WRITE);
-    if (!file) {
-      Serial.println("failed to open file");
-      while (1);
-    }
-    String message = input_SSID + "\n" + input_PASSWORD + "\n" + input_EMAIL + "\n" + input_IP + "\n" + input_ROUTER + "\n" + input_SUBNET + "\n";
-    if (!file.print(message)) {
-      Serial.println("failed to save file");
-      while (1)
-      {
-        reset_monitor();
-      }
-    }
-
-    file.close();
     Serial.println("Restarting Gateway");
     ESP.restart();
   });
@@ -237,22 +236,22 @@ int SDCard_Setup() {
   Serial.print(cardSize, 3);
   Serial.println("MB");
 
+  CONFIGURATE = false;
   return 1;
 }
 
 
 // **************************SD CARD GET DATA****************************
-void SD_get_data() {
+int SD_get_data() {
   if (!SD.exists(CONFIG_FILE)) {
     Serial.println("Failed to load data, Config File doesn't exist");
-    CONFIGURATE = true;
-    return;
+    return -1;
   }
 
   File file = SD.open(CONFIG_FILE, FILE_READ);
   if (!file) {
     Serial.println("Failed to load data, cannot open file");
-    while (1);
+    return -1;
   }
 
   String Buffer = "";
@@ -288,21 +287,21 @@ void SD_get_data() {
   if (!Gateway_IP.fromString((const char*)GWIP)) {
     Serial.println("Failed to retrieve Gateway IP Address from SD");
     file.close();
-    return;
+    return -1;
   }
   if (!Router_IP.fromString((const char*)RIP)) {
     Serial.println("Failed to retrieve Router IP Address from SD");
     file.close();
-    return;
+    return -1;
   }
   if (!Subnet.fromString((const char*)MASK)) {
     Serial.println("Failed to retrieve Subnet Mask from SD");
     file.close();
-    return;
+    return -1;
   }
 
   file.close();
-  CONFIGURATE = false;
+  return 1;
 }
 
 /*                                    *************************************
@@ -336,6 +335,11 @@ void reset_monitor()
 // **************************VOID SETUP****************************
 void setup() {
   Serial.begin(115200);
+  pinMode(RESET_PIN, INPUT);
+  pinMode(BLUE, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(RED, OUTPUT);
+  
   if (SDCard_Setup() < 0) {
     Serial.println("SD Card error, cannot proceed");
     while (1)
@@ -343,7 +347,9 @@ void setup() {
       reset_monitor();
     }
   }
-  SD_get_data();
+
+  if (SD_get_data() < 0)
+    CONFIGURATE = true;
 
   if (CONFIGURATE) {
     if (!SD.exists(CONFIG_FILE)) {
@@ -364,13 +370,11 @@ void setup() {
   else {
     // LET GATEWAY START ITS JOB
     Serial.print("Attempting to connect to ");
-    Serial.println(input_SSID);
+    Serial.print(input_SSID);
 
     WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
 
-    IPAddress primaryDNS(8, 8, 8, 8);
-    IPAddress secondaryDNS(8, 8, 4, 4);
-    if (!WiFi.config(Gateway_IP, Router_IP, Subnet, primaryDNS, secondaryDNS)) {
+    if (!WiFi.config(Gateway_IP, Router_IP, Subnet)) {
       Serial.println("STA Failed to configure");
     }
 
@@ -388,6 +392,7 @@ void setup() {
       if (WiFi.status() == WL_CONNECT_FAILED)
         break;
     }
+    Serial.println("");
 
     if (WiFi.status() != WL_CONNECTED)
     {
@@ -401,10 +406,10 @@ void setup() {
     Serial.println("WiFi Connected!");
     Serial.println(WiFi.localIP());
 
-    Gateway();
+    /*Gateway();
     server.onNotFound(notFound);
     server.begin();
-
+*/
     //***************************FIREBASE INITIALIZATION************************
     Serial.println("Starting Firebase Communication:\n");
     Serial.println("Firebase.begin:\n");
@@ -423,20 +428,27 @@ void setup() {
 void loop() {
   if (!CONFIGURATE)
   {
+    digitalWrite(GREEN, HIGH);
+    digitalWrite(BLUE, HIGH);
+    digitalWrite(RED, HIGH);
     if (millis() - updateTime > 300)
     {
+      Serial.println("1");
       //tienes el calor
       json.set("/alarm", 1);
 
+      Serial.println("2");
       //SCRITTURA
       // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
       //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
       Firebase.updateNode(fData, "Daniel_r/ACTUATORS/Mansarda", json);
 
+      Serial.println("3");
       json.set("/score", -1);
       Firebase.updateNode(fData, "Daniel_r/SENSORS/Mansarda", json);
 
 
+      Serial.println("4");
       //LETTURA
       //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
       Firebase.getBool(fData, "Daniel_r/ACTUATORS/Mansarda/alarm");
