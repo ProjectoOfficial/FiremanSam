@@ -93,6 +93,9 @@ String error = "";
 IPAddress local_IP(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 
+IPAddress primaryDNS(8, 8, 8, 8);   //optional
+IPAddress secondaryDNS(8, 8, 4, 4); //optional
+
 IPAddress Gateway_IP;
 IPAddress Router_IP;
 IPAddress Subnet;
@@ -364,22 +367,12 @@ void setup() {
     Serial.print("Attempting to connect to ");
     Serial.print(input_SSID);
 
-    WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
-
-
-    Serial.println("");
-    Serial.println(input_IP);
-    Serial.println(input_ROUTER);
-    Serial.println("");
-    Serial.println(Gateway_IP);
-    Serial.println(Subnet);
-    Serial.println(Router_IP);
-
-    
-    if (!WiFi.config(Gateway_IP, Router_IP, Subnet)) {
+    if (!WiFi.config(Gateway_IP, Router_IP, Subnet, primaryDNS, secondaryDNS)) {
       Serial.println("STA Failed to configure");
     }
-
+    
+    WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
+    
     unsigned long start_time = millis();
     unsigned long dot_time = millis();
 
@@ -416,7 +409,6 @@ void setup() {
 */
     //***************************FIREBASE INITIALIZATION************************
     Serial.println("Starting Firebase Communication:\n");
-    Serial.println("Firebase.begin:\n");
     Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
     Firebase.reconnectWiFi(true);
     Firebase.setReadTimeout(fData, 1000 * 60);
