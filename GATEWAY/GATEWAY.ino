@@ -374,6 +374,12 @@ void setup() {
 
     WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
 
+
+    Serial.println(Gateway_IP);
+    Serial.println(Subnet);
+    Serial.println(Router_IP);
+
+    
     if (!WiFi.config(Gateway_IP, Router_IP, Subnet)) {
       Serial.println("STA Failed to configure");
     }
@@ -405,6 +411,8 @@ void setup() {
 
     Serial.println("WiFi Connected!");
     Serial.println(WiFi.localIP());
+    Serial.println(WiFi.subnetMask());
+    Serial.println(WiFi.gatewayIP());
 
     /*Gateway();
     server.onNotFound(notFound);
