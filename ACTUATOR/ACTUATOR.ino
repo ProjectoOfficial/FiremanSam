@@ -42,7 +42,7 @@ bool CONFIGURATE = true;
 unsigned long timeBlink = millis();
 unsigned long timeBuzz = millis();
 
-const char* ssid_AP     = "FiremanSam-Sensor";
+const char* ssid_AP     = "FiremanSam-Actuator";
 const char* password_AP = "12345678";
 
 const char* WIFI_SSID = "ssid";
