@@ -5,6 +5,8 @@
 #include <FirebaseESP32.h>
 #include "index.h"
 
+#define RESET_PIN 4
+
 //***********************SD CARD CONFIGURATION********************
 #include "FS.h"
 #include "SD.h"
@@ -20,6 +22,10 @@ const String PAIRS_FILE = "/pairs.txt";
 const String SENSORS_FILE = "/sensors.txt";
 const String ACTUATORS_FILE = "/actuators.txt";
 
+unsigned long start_reset;
+
+  #define RESET_DELAY 3000 //3 secondi per resettare la SD
+
 // *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
 
 // Insert Firebase project API Key
@@ -32,9 +38,17 @@ const String ACTUATORS_FILE = "/actuators.txt";
 FirebaseData fData;
 FirebaseJson json;
 
-// *********************WEB SERVER CONFIGURATION******************
+
+unsigned long updateTime = 0;
+/*                                    *************************************
+ ***************************************    WEBSERVER CONFIGURATION      **********************************************
+ *                                    *************************************
+*/
+
 #define CONNECT_TIME 10000
 #define TIMEOUTTIME 5000
+
+bool CONFIGURATE = true;
 
 AsyncWebServer server(80);
 
@@ -203,7 +217,7 @@ void SDCard_Setup() {
 
 
 // **************************SD CARD GET DATA****************************
-void SD_Update_data() {
+void SD_get_data() {
   if (!SD.exists(CONFIG_FILE)) {
     Serial.println("Failed to load data, Config File doesn't exist");
     return;
@@ -262,26 +276,58 @@ void SD_Update_data() {
   }
 
   file.close();
+  CONFIGURATE = false;
 }
+
+/*                                    *************************************
+ ***************************************         RESET MONITOR           **********************************************
+ *                                    *************************************
+*/
+
+void reset_monitor() 
+{
+  /*
+   * @brief this function monitors the reset button which
+   *        brings the device back to factory state
+  */
+  if (digitalRead(RESET_PIN)) 
+  {
+    if (millis() - start_reset > RESET_DELAY) 
+    {
+      for (int i = 0; i < 10; i++) 
+      {
+        //digitalWrite(LED, !digitalRead(LED));
+        delay(100);
+      }
+      //reset_eeprom();
+    }
+  } else {
+    start_reset = millis();
+  }
+}
+
+
 // **************************VOID SETUP****************************
 void setup() {
   Serial.begin(115200);
   SDCard_Setup();
-  SD_Update_data();
+  SD_get_data();
 
-  if (!SD.exists(CONFIG_FILE)) {
-    // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
-    WiFi.softAP(ssid_AP, password_AP);
-    if (!WiFi.softAPConfig(local_IP, local_IP, subnet)) {
-      Serial.println("STA Failed to configure");
+  if (CONFIGURATE) {
+    if (!SD.exists(CONFIG_FILE)) {
+      // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
+      WiFi.softAP(ssid_AP, password_AP);
+      if (!WiFi.softAPConfig(local_IP, local_IP, subnet)) {
+        Serial.println("STA Failed to configure");
+      }
+      IPAddress IP = WiFi.softAPIP();
+      Serial.print("Access Point IP address: ");
+      Serial.println(IP);
+
+      configure();
+      server.onNotFound(notFound);
+      server.begin();
     }
-    IPAddress IP = WiFi.softAPIP();
-    Serial.print("Access Point IP address: ");
-    Serial.println(IP);
-
-    configure();
-    server.onNotFound(notFound);
-    server.begin();
   }
   else {
     // LET GATEWAY START ITS JOB
@@ -334,28 +380,42 @@ void setup() {
   Firebase.setwriteSizeLimit(fData, "tiny");
   delay(1000);
 
+  updateTime = millis();
 }
 
 
 // **************************VOID LOOP****************************
 void loop() {
+  if (!CONFIGURATE)
+  {
+    if (millis() - updateTime > 300)
+    {
+      //tienes el calor
+      json.set("/alarm", 1);
 
-  //tienes el calor
-  json.set("/alarm", 1);
+      //SCRITTURA
+      // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
+      //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
+      Firebase.updateNode(fData, "Daniel_r/ACTUATORS/Mansarda", json);
 
-  //SCRITTURA
-  // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
-  //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
-  Firebase.updateNode(fData, "Daniel_r" + "/" + "ACTUATORS" + "/" + "Mansarda", json);
-  
-  json.set("/score", -1);
-  Firebase.updateNode(fData, "Daniel_r" + "/" + "SENSORS" + "/" + "Mansarda", json);
-  
-  
-  //LETTURA
-  //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
-  Firebase.getBool(fData, "Daniel_r" + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
-  bool AlarmValue = fData.to<bool>();
+      json.set("/score", -1);
+      Firebase.updateNode(fData, "Daniel_r/SENSORS/Mansarda", json);
 
-  Serial.println(AlarmValue);
+
+      //LETTURA
+      //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
+      Firebase.getBool(fData, "Daniel_r/ACTUATORS/Mansarda/alarm");
+      bool AlarmValue = fData.to<bool>();
+
+      Serial.println(AlarmValue);
+
+      updateTime = millis();
+    }
+    reset_monitor();
+  }
+  else
+  {
+    //led_blink();
+    Serial.println("Gateway Not configured Properly");
+  }
 }
