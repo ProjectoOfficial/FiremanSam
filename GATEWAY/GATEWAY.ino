@@ -2,15 +2,8 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <Firebase_ESP_Client.h>
+#include <FirebaseESP32.h>
 #include "index.h"
-
-//Provide the token generation process info.
-#include "addons/TokenHelper.h"
-//Provide the RTDB payload printing info and other helper functions.
-#include "addons/RTDBHelper.h"
-
-
 
 //***********************SD CARD CONFIGURATION********************
 #include "FS.h"
@@ -30,16 +23,15 @@ const String ACTUATORS_FILE = "/actuators.txt";
 // *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
 
 // Insert Firebase project API Key
-#define API_KEY "AIzaSyA6SiyB5rKwcRLYpYKGo3iMlJQZeh6MCWQ"
+#define FIREBASE_AUTH "AIzaSyA6SiyB5rKwcRLYpYKGo3iMlJQZeh6MCWQ"
 
 // Insert RTDB URLefine the RTDB URL */
-#define DATABASE_URL "https://fir-test-gateway-default-rtdb.europe-west1.firebasedatabase.app/" 
+#define FIREBASE_HOST "https://fir-test-gateway-default-rtdb.europe-west1.firebasedatabase.app/" 
 
 //Define Firebase Data objects
-FirebaseData fbdo;
+FirebaseData fData;
+FirebaseJson json;
 
-FirebaseAuth auth;
-FirebaseConfig config;
 // *********************WEB SERVER CONFIGURATION******************
 #define CONNECT_TIME 10000
 #define TIMEOUTTIME 5000
@@ -335,50 +327,30 @@ void setup() {
 
   //***************************FIREBASE INITIALIZATION************************
   Serial.println("Starting Firebase Communication:\n");
-  /* Assign the api key (required) */
-  config.api_key = API_KEY;
-
-  /* Assign the RTDB URL (required) */
-  config.database_url = DATABASE_URL;
-  bool signupOK = false;
-
-  /* Sign up */
-  if (Firebase.signUp(&config, &auth, "", "")){
-    Serial.println("ok");
-    signupOK = true;
-  }
-  else{
-    Serial.printf("%s\n", config.signer.signupError.message.c_str());
-    Serial.println("Mi sono bloccato nel Firebase.signUP.\n");
-  }
-
-  /* Assign the callback function for the long running token generation task */
-  config.token_status_callback = tokenStatusCallback; //see addons/TokenHelper.h
-
-  Serial.println("Ora vado a scrivere su Firebase.\n");
-  Firebase.begin(&config, &auth);
   Serial.println("Firebase.begin:\n");
-  
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Firebase.reconnectWiFi(true);
+  Firebase.setReadTimeout(fData, 1000 * 60);
+  Firebase.setwriteSizeLimit(fData, "tiny");
   delay(1000);
-  //now we use the input_EMAIL entered by the user to look for his folder in the
-  //firebase database, if it's not there, we just create
-  float test_value = 1.0;
-  if (Firebase.RTDB.setFloat(&fbdo, "ciccioPasticcio", test_value)){
-      Serial.println("PASSED");
-      Serial.println("PATH: " + fbdo.dataPath());
-      Serial.println("TYPE: " + fbdo.dataType());
-    }
-    else {
-      Serial.println("FAILED");
-      Serial.println("REASON: " + fbdo.errorReason());
-    }
   
 }
 
 
 // **************************VOID LOOP****************************
 void loop() {
-  // put your main code here, to run repeatedly:
 
+  //tienes el calor
+  bool score = true;
+  json.set("/score", score);
+
+  //SCRITTURA
+  // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
+  Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
+
+  //LETTURA
+  Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "PROVA" + "/alarm");
+  bool AlarmValue = fData.to<bool>();
+
+  Serial.println(AlarmValue);
 }
