@@ -13,13 +13,13 @@
 #define BLINK_TIME 500
 unsigned long timeBlink = millis();
 
-void led_blink() 
+void led_blink()
 {
   /*
      @brief it is used for showing to the user that the device
             is in configuration mode
   */
-  if (millis() - timeBlink > BLINK_TIME) 
+  if (millis() - timeBlink > BLINK_TIME)
   {
     digitalWrite(BLUE, !digitalRead(BLUE));
     timeBlink = millis();
@@ -404,18 +404,18 @@ void setup() {
     Gateway();
     server.onNotFound(notFound);
     server.begin();
+
+    //***************************FIREBASE INITIALIZATION************************
+    Serial.println("Starting Firebase Communication:\n");
+    Serial.println("Firebase.begin:\n");
+    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+    Firebase.reconnectWiFi(true);
+    Firebase.setReadTimeout(fData, 1000 * 60);
+    Firebase.setwriteSizeLimit(fData, "tiny");
+    delay(1000);
+
+    updateTime = millis();
   }
-
-  //***************************FIREBASE INITIALIZATION************************
-  Serial.println("Starting Firebase Communication:\n");
-  Serial.println("Firebase.begin:\n");
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  Firebase.reconnectWiFi(true);
-  Firebase.setReadTimeout(fData, 1000 * 60);
-  Firebase.setwriteSizeLimit(fData, "tiny");
-  delay(1000);
-
-  updateTime = millis();
 }
 
 
@@ -451,6 +451,5 @@ void loop() {
   else
   {
     led_blink();
-    Serial.println("Gateway Not configured Properly");
   }
 }
