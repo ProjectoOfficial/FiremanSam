@@ -10,6 +10,22 @@
 #define GREEN 35
 #define BLUE 34
 
+#define BLINK_TIME 500
+unsigned long timeBlink = millis();
+
+void led_blink() 
+{
+  /*
+     @brief it is used for showing to the user that the device
+            is in configuration mode
+  */
+  if (millis() - timeBlink > BLINK_TIME) 
+  {
+    digitalWrite(BLUE, !digitalRead(BLUE));
+    timeBlink = millis();
+  }
+}
+
 //***********************SD CARD CONFIGURATION********************
 #include "FS.h"
 #include "SD.h"
@@ -166,7 +182,10 @@ void configure() {
     String message = input_SSID + "\n" + input_PASSWORD + "\n" + input_EMAIL + "\n" + input_IP + "\n" + input_ROUTER + "\n" + input_SUBNET + "\n";
     if (!file.print(message)) {
       Serial.println("failed to save file");
-      while (1);
+      while (1)
+      {
+        reset_monitor
+      };
     }
 
     file.close();
@@ -431,7 +450,7 @@ void loop() {
   }
   else
   {
-    //led_blink();
+    led_blink();
     Serial.println("Gateway Not configured Properly");
   }
 }
