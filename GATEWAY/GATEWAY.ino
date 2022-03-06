@@ -184,8 +184,8 @@ void configure() {
       Serial.println("failed to save file");
       while (1)
       {
-        reset_monitor
-      };
+        reset_monitor();
+      }
     }
 
     file.close();
