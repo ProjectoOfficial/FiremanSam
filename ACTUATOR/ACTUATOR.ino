@@ -19,8 +19,8 @@
  *                                    *************************************
 */
 
-#define FIREBASE_HOST ""
-#define FIREBASE_AUTH ""
+#define FIREBASE_HOST "https://firemansam-459c0-default-rtdb.europe-west1.firebasedatabase.app/"
+#define FIREBASE_AUTH "7i1dpSEfmefSNWJ9BZr26QW78gtCuSbbN8vUCAz7"
 
 FirebaseData fData;
 FirebaseJson json;
@@ -60,33 +60,28 @@ String error = "";
 IPAddress IPAddress_AP(192, 168, 1, 1);
 IPAddress subnet_AP(255, 255, 255, 0);
 
-void led_blink() 
-{
+void led_blink() {
   /*
      @brief it is used for showing to the user that the device
             is in configuration mode
   */
-  if (millis() - timeBlink > BLINK_TIME) 
-  {
+  if (millis() - timeBlink > BLINK_TIME) {
     digitalWrite(LED, !digitalRead(LED));
     timeBlink = millis();
   }
 }
 
-void buzzer_buzz() 
-{
+void buzzer_buzz() {
   /*
      @brief it is used to warn in case of fire
   */
-  if (millis() - timeBuzz > BUZZ_TIME) 
-  {
+  if (millis() - timeBuzz > BUZZ_TIME) {
     digitalWrite(BUZZER, !digitalRead(BUZZER));
     timeBuzz = millis();
   }
 }
 
-void notFound(AsyncWebServerRequest *request) 
-{
+void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
@@ -97,14 +92,12 @@ void configure() {
   */
 
   //ROOT PAGE REDIRECT TO SETUP PAGE
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) 
-  {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", setup_html);
   });
 
   //SETUP PAGE
-  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) 
-  {
+  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) {
     error = "";
 
     //WiFi SSID
@@ -145,14 +138,12 @@ void configure() {
   });
 
   //ERROR PAGE
-  server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) 
-  {
+  server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(200, "text/html", setup_html);
   });
 
   //SUCCESS PAGE
-  server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) 
-  {
+  server.on("/success", HTTP_GET, [](AsyncWebServerRequest * request) {
     ESP.restart();
   });
 }
@@ -170,11 +161,10 @@ ExtEEPROM ee = ExtEEPROM();
 #define RESET_DELAY 3000 //3 secondi per resettare la EEPROM
 unsigned long start_reset;
 
-void store(String ssid, String password, String email, String device)
-{
+void store(const String ssid, const String password, const String email, const String device) {
   String sep = String((char)STRING_SEPARATOR);
   String buff = String(1) + sep + ssid + sep + password + sep + email + sep + device;
-  Serial.println(buff);
+
   digitalWrite(EEPROM_PIN, HIGH);
   delay(10);
   ee.begin();
@@ -184,8 +174,7 @@ void store(String ssid, String password, String email, String device)
   digitalWrite(EEPROM_PIN, LOW);
 }
 
-void load() 
-{
+void load() {
   String sep = String((char)STRING_SEPARATOR);
 
   digitalWrite(EEPROM_PIN, HIGH);
@@ -195,8 +184,6 @@ void load()
   String buff = String(ee.ERead());
   delay(LOAD_DELAY);
   digitalWrite(EEPROM_PIN, LOW);
-
-  Serial.println(buff);
 
   String conf = buff.substring(0, 1);
 
@@ -216,8 +203,7 @@ void load()
     CONFIGURATE = false;
 }
 
-void reset_eeprom() 
-{
+void reset_eeprom() {
   digitalWrite(EEPROM_PIN, HIGH);
   delay(10);
   ee.begin();
@@ -228,12 +214,16 @@ void reset_eeprom()
   ESP.restart();
 }
 
+const String splitString(const String str) {
+  String buff = str;
+  return buff.substring(0, buff.indexOf('@'));
+}
+
 /*                                    *************************************
  ***************************************           VOID SETUP            **********************************************
  *                                    *************************************
 */
-void setup() 
-{
+void setup() {
   Serial.begin(115200);
 
   pinMode(LED, OUTPUT);
@@ -246,10 +236,8 @@ void setup()
 
   load();
 
-  if (CONFIGURATE)
-  { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
-    if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) 
-    {
+  if (CONFIGURATE) { // ASK USER TO CONFIGURATE SENSOR THROUGH WEB SERVER
+    if (!WiFi.softAPConfig(IPAddress_AP, IPAddress_AP, subnet_AP)) {
       Serial.println("STA Failed to configure");
     }
 
@@ -263,8 +251,7 @@ void setup()
     server.onNotFound(notFound);
     server.begin();
   }
-  else
-  { // LET SENSOR START ITS JOB
+  else { // LET SENSOR START ITS JOB
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
 
@@ -275,8 +262,7 @@ void setup()
     unsigned long start_time = millis();
     unsigned long dot_time = millis();
 
-    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) 
-    {
+    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
       if (dot_time + 2000 < millis()) {
         Serial.print(".");
         dot_time = millis();
@@ -316,18 +302,14 @@ void setup()
  *                                    *************************************
 */
 
-void reset_monitor() 
-{
+void reset_monitor() {
   /*
-   * @brief this function monitors the reset button which
-   *        brings the device back to factory state
+     @brief this function monitors the reset button which
+            brings the device back to factory state
   */
-  if (digitalRead(RESET_PIN)) 
-  {
-    if (millis() - start_reset > RESET_DELAY) 
-    {
-      for (int i = 0; i < 10; i++) 
-      {
+  if (digitalRead(RESET_PIN)) {
+    if (millis() - start_reset > RESET_DELAY) {
+      for (int i = 0; i < 10; i++) {
         digitalWrite(LED, !digitalRead(LED));
         delay(100);
       }
@@ -342,32 +324,33 @@ void reset_monitor()
  ***************************************            VOID LOOP            **********************************************
  *                                    *************************************
 */
-void loop() 
+void loop()
 {
-  if (!CONFIGURATE) 
-  {
-    if (millis() - updateTime > 300)
-    {
-      Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + input_DEVICE + "/alarm");
+  if (!CONFIGURATE) {
+    if (millis() - updateTime > 300) {
+      Firebase.getBool(fData, splitString(input_EMAIL) + "/" + "ACTUATORS" + "/" + input_DEVICE + "/alarm");
       bool AlarmValue = fData.to<bool>();
 
       Serial.println(AlarmValue);
 
-      if (AlarmValue) 
-      {
+      if (AlarmValue) {
         Serial.println("Fire detected!");
         buzzer_buzz();
-      }else
-      {
-        digitalWrite(BUZZER, LOW);
+        if (!digitalRead(LED))
+          digitalWrite(LED, HIGH);
       }
+      else {
+        if (digitalRead(BUZZER))
+          digitalWrite(BUZZER, LOW);
 
+        if (digitalRead(LED))
+          digitalWrite(LED, LOW);
+      }
       updateTime = millis();
     }
     reset_monitor();
   }
-  else
-  {
+  else {
     led_blink();
   }
 }
