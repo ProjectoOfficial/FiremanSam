@@ -7,7 +7,7 @@
 
 #define RESET_PIN 4
 #define RED 32
-#define GREEN 35
+#define GREEN 35 // modificare hardware pin verde e blu perché questi GPIO sono solo input
 #define BLUE 34
 
 #define BLINK_TIME 500
@@ -179,7 +179,6 @@ void configure() {
         reset_monitor();
       }
     }
-
     file.close();
   });
 
@@ -300,6 +299,15 @@ int SD_get_data() {
 }
 
 /*                                    *************************************
+ ***************************************       DOWNLOAD SENSORS          **********************************************
+ *                                    *************************************
+*/
+
+void download_sensors() {
+  Firebase.getString(fData, input_EMAIL + "/SENSORS/");
+}
+
+/*                                    *************************************
  ***************************************         RESET MONITOR           **********************************************
  *                                    *************************************
 */
@@ -334,7 +342,7 @@ void setup() {
   pinMode(BLUE, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(RED, OUTPUT);
-  
+
   if (SDCard_Setup() < 0) {
     Serial.println("SD Card error, cannot proceed");
     while (1)
@@ -370,9 +378,9 @@ void setup() {
     if (!WiFi.config(Gateway_IP, Router_IP, Subnet, primaryDNS, secondaryDNS)) {
       Serial.println("STA Failed to configure");
     }
-    
+
     WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
-    
+
     unsigned long start_time = millis();
     unsigned long dot_time = millis();
 
@@ -403,10 +411,10 @@ void setup() {
     Serial.println(WiFi.subnetMask());
     Serial.println(WiFi.gatewayIP());
 
-    /*Gateway();
+    Gateway();
     server.onNotFound(notFound);
     server.begin();
-*/
+
     //***************************FIREBASE INITIALIZATION************************
     Serial.println("Starting Firebase Communication:\n");
     Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
