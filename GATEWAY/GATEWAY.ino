@@ -171,6 +171,8 @@ void configure() {
       Serial.println("failed to create the CONFIG file");
       while (1);
     }
+
+    input_EMAIL = splitString(input_EMAIL);
     String message = input_SSID + "\n" + input_PASSWORD + "\n" + input_EMAIL + "\n" + input_IP + "\n" + input_ROUTER + "\n" + input_SUBNET + "\n";
     if (!file.print(message)) {
       Serial.println("failed to save CONFIG file");
@@ -184,7 +186,6 @@ void configure() {
 
   //ERROR PAGE
   server.on("/error", HTTP_GET, [](AsyncWebServerRequest * request) {
-
     request->send(200, "text/html", setup_html);
   });
 
@@ -243,7 +244,10 @@ int SDCard_Setup() {
 }
 
 
-// **************************SD CARD GET DATA****************************
+/*                                    *************************************
+ ***************************************             SD CARD            **********************************************
+ *                                    *************************************
+*/
 int SD_get_data() {
   if (!SD.exists(CONFIG_FILE)) {
     Serial.println("Failed to load data, Config File doesn't exist");
@@ -299,12 +303,56 @@ int SD_get_data() {
 }
 
 /*                                    *************************************
+ ***************************************   SENSORS STRING EXCTRACTOR    **********************************************
+ *                                    *************************************
+*/
+
+void sensors_extractor(const String str) {
+  /*
+     @brief extracts sensors from a firebase request and saves them on sensors.txt file
+
+     @param str the firebase request
+  */
+
+  int last_index = 0;
+  String all_sensors = "";
+
+  while (true) {
+    int index = str.indexOf(',', last_index + 1);
+    String substr = "";
+    if (index == -1) {
+      substr = str.substring(last_index);
+    } else
+      substr = str.substring(last_index, index);
+
+    int fapex = substr.indexOf('"');
+    int lapex = substr.indexOf('"', fapex + 1);
+    all_sensors += substr.substring(fapex + 1, lapex) + '\n';
+
+    if (index == -1)
+      break;
+    else
+      last_index = index;
+  }
+
+  File file = SD.open(SENSORS_FILE, FILE_WRITE);
+  if (!file.print(all_sensors))
+    Serial.println("failed to save SENSORS file");
+  file.close();
+
+}
+
+
+/*                                    *************************************
  ***************************************       DOWNLOAD SENSORS          **********************************************
  *                                    *************************************
 */
 
 void download_sensors() {
-  Firebase.getString(fData, input_EMAIL + "/SENSORS/");
+  Firebase.getString(fData, "Daniel_r/SENSORS/");
+  String str = fData.to<String>();
+  sensors_extractor(str);
+  Serial.println(str);
 }
 
 /*                                    *************************************
@@ -334,8 +382,21 @@ void reset_monitor()
   }
 }
 
+/*                                    *************************************
+ ***************************************         STRING SPLIT           **********************************************
+ *                                    *************************************
+*/
 
-// **************************VOID SETUP****************************
+const String splitString(const String str) {
+  String buff = str;
+  return buff.substring(0, buff.indexOf('@'));
+}
+
+
+/*                                    *************************************
+ ***************************************          VOID SETUP            **********************************************
+ *                                    *************************************
+*/
 void setup() {
   Serial.begin(115200);
   pinMode(RESET_PIN, INPUT);
@@ -423,6 +484,7 @@ void setup() {
     Firebase.setwriteSizeLimit(fData, "tiny");
     delay(1000);
 
+    download_sensors();
     updateTime = millis();
   }
 }
@@ -436,24 +498,24 @@ void loop() {
     digitalWrite(BLUE, HIGH);
     digitalWrite(RED, HIGH);
     if (millis() - updateTime > 300)
-    {
-      //tienes el calor
-      json.set("/alarm", 1);
+    { /*
+        //tienes el calor
+        json.set("/alarm", 1);
 
-      //SCRITTURA
-      // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
-      //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
-      Firebase.updateNode(fData, "Daniel_r/ACTUATORS/Mansarda", json);
+        //SCRITTURA
+        // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
+        //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
+        Firebase.updateNode(fData, "Daniel_r/ACTUATORS/Mansarda", json);
 
-      json.set("/score", -1);
-      Firebase.updateNode(fData, "Daniel_r/SENSORS/Mansarda", json);
+        json.set("/score", -1);
+        Firebase.updateNode(fData, "Daniel_r/SENSORS/Mansarda", json);
 
-      //LETTURA
-      //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
-      Firebase.getBool(fData, "Daniel_r/ACTUATORS/Mansarda/alarm");
-      bool AlarmValue = fData.to<bool>();
+        //LETTURA
+        //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
+        Firebase.getBool(fData, "Daniel_r/ACTUATORS/Mansarda/alarm");
+        bool AlarmValue = fData.to<bool>();
 
-      Serial.println(AlarmValue);
+        Serial.println(AlarmValue);*/
 
       updateTime = millis();
     }
