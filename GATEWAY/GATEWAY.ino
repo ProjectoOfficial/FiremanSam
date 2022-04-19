@@ -196,6 +196,20 @@ void configure() {
   });
 }
 
+/*                                    *************************************
+ ***************************************             GATEWAY            **********************************************
+ *                                    *************************************
+*/
+
+const String populate_gwpage(const String sensors_file, const String actuators_file){
+  FILE fs = SD.open(sensors_file, FILE_READ);
+  FILE fa = SD.open(actuators_file, FILE_READ);
+
+  fa.close(); 
+  fs.close();
+}
+
+
 void Gateway() {
   //ROOT PAGE REDIRECT TO SETUP PAGE
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -207,7 +221,10 @@ void Gateway() {
   });
 }
 
-// **************************SD CARD SETUP****************************
+/*                                    *************************************
+ ***************************************             SD CARD            **********************************************
+ *                                    *************************************
+*/
 int SDCard_Setup() {
   Serial.println("SD CARD SETUP");
   if (!SD.begin(SD_CS)) {
@@ -243,11 +260,6 @@ int SDCard_Setup() {
   return 1;
 }
 
-
-/*                                    *************************************
- ***************************************             SD CARD            **********************************************
- *                                    *************************************
-*/
 int SD_get_data() {
   if (!SD.exists(CONFIG_FILE)) {
     Serial.println("Failed to load data, Config File doesn't exist");
@@ -307,7 +319,7 @@ int SD_get_data() {
  *                                    *************************************
 */
 
-void sensors_extractor(const String str) {
+void devices_extractor(const String str, const String filename) {
   /*
      @brief extracts sensors from a firebase request and saves them on sensors.txt file
 
@@ -315,7 +327,7 @@ void sensors_extractor(const String str) {
   */
 
   int last_index = 0;
-  String all_sensors = "";
+  String all_devices = "";
 
   while (true) {
     int index = str.indexOf(',', last_index + 1);
@@ -327,7 +339,7 @@ void sensors_extractor(const String str) {
 
     int fapex = substr.indexOf('"');
     int lapex = substr.indexOf('"', fapex + 1);
-    all_sensors += substr.substring(fapex + 1, lapex) + '\n';
+    all_devices += substr.substring(fapex + 1, lapex) + '\n';
 
     if (index == -1)
       break;
@@ -335,11 +347,10 @@ void sensors_extractor(const String str) {
       last_index = index;
   }
 
-  File file = SD.open(SENSORS_FILE, FILE_WRITE);
-  if (!file.print(all_sensors))
-    Serial.println("failed to save SENSORS file");
+  File file = SD.open(filename, FILE_WRITE);
+  if (!file.print(all_devices))
+    Serial.println("failed to save on device file");
   file.close();
-
 }
 
 
@@ -348,10 +359,18 @@ void sensors_extractor(const String str) {
  *                                    *************************************
 */
 
-void download_sensors() {
-  Firebase.getString(fData, "Daniel_r/SENSORS/");
+void download_devices() {
+  /*
+   * @brief retrieves sensors and actuators of a specific user and saves them on two different files
+   */
+  Firebase.getString(fData, input_EMAIL + "/SENSORS/");
   String str = fData.to<String>();
-  sensors_extractor(str);
+  devices_extractor(str, SENSORS_FILE);
+  Serial.println(str);
+
+  Firebase.getString(fData, input_EMAIL + "/ACTUATORS/");
+  str = fData.to<String>();
+  devices_extractor(str, ACTUATORS_FILE);
   Serial.println(str);
 }
 
@@ -366,20 +385,17 @@ void reset_monitor()
      @brief this function monitors the reset button which
             brings the device back to factory state
   */
-  if (digitalRead(RESET_PIN))
-  {
-    if (millis() - start_reset > RESET_DELAY)
-    {
-      for (int i = 0; i < 10; i++)
-      {
+  if (digitalRead(RESET_PIN)){
+    if (millis() - start_reset > RESET_DELAY) {
+      for (int i = 0; i < 10; i++){
         digitalWrite(BLUE, !digitalRead(BLUE));
         delay(100);
       }
+      Serial.println("Gateway reset successfully");
       SD.remove(CONFIG_FILE);
     }
-  } else {
+  } else 
     start_reset = millis();
-  }
 }
 
 /*                                    *************************************
@@ -406,10 +422,9 @@ void setup() {
 
   if (SDCard_Setup() < 0) {
     Serial.println("SD Card error, cannot proceed");
-    while (1)
-    {
+    while (true)
       reset_monitor();
-    }
+    
   }
 
   if (SD_get_data() < 0)
@@ -445,10 +460,8 @@ void setup() {
     unsigned long start_time = millis();
     unsigned long dot_time = millis();
 
-    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis())
-    {
-      if (dot_time + 2000 < millis())
-      {
+    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()){
+      if (dot_time + 2000 < millis()){
         Serial.print(".");
         dot_time = millis();
       }
@@ -458,13 +471,10 @@ void setup() {
     }
     Serial.println("");
 
-    if (WiFi.status() != WL_CONNECTED)
-    {
+    if (WiFi.status() != WL_CONNECTED){
       Serial.println(" cannot connect to WiFi!");
       while (true)
-      {
         reset_monitor();
-      }
     }
 
     Serial.println("WiFi Connected!");
@@ -484,7 +494,7 @@ void setup() {
     Firebase.setwriteSizeLimit(fData, "tiny");
     delay(1000);
 
-    download_sensors();
+    download_devices();
     updateTime = millis();
   }
 }
@@ -522,7 +532,5 @@ void loop() {
     reset_monitor();
   }
   else
-  {
     led_blink();
-  }
 }
