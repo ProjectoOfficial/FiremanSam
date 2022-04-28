@@ -13,7 +13,7 @@ const char gateway_html[] PROGMEM = R"rawliteral(
   </head>
 
   <body>
-    <div >
+    <div style="text-align: center; margin: 0 auto;">
       <h1>Reset device</h1>
         <br/>
         <form action="/gateway">
@@ -21,7 +21,7 @@ const char gateway_html[] PROGMEM = R"rawliteral(
         </form>
         <br/>
     </div>
-    <div >
+    <div style="text-align: center; margin: 0 auto;">
       <h1>Pair</h1>
         <br/>
         <form action="/gateway">
@@ -54,7 +54,7 @@ const char pair_html[] PROGMEM = R"rawliteral(
             <br/>
         </div>
     
-        <form class="row gy-2 gx-3 align-items-center" action="/couples.html" style="text-align: center; margin: 0 auto; width: 50%;">
+        <form class="row gy-2 gx-3 align-items-center" action="/pair" style="text-align: center; margin: 0 auto; width: 50%;">
             <div class="col-md-6" >
                 <label class="visually-hidden" for="Sensori">Sensori</label>
                 <br />
@@ -77,7 +77,7 @@ const char pair_html3[] PROGMEM = R"rawliteral(
                 </select>
             </div>
             <br />
-            <button style="text-align: center; margin: 0 auto;" type="submit" class="btn btn-primary">Accoppia</button>
+            <button style="text-align: center; margin: 0 auto;" id="pair" name="pair" type="submit" class="btn btn-primary">Pair</button>
         </form>
 
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

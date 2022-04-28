@@ -205,15 +205,49 @@ void configure() {
 
 String populate_dropdown(const String filename) {
   File fs = SD.open(filename, FILE_READ);
+
+  if (!fs) {
+    Serial.print("failed to open ");
+    Serial.println(filename);
+    while (1);
+  }
+
   String buff = "";
   while (fs.available()) {
     String dt = fs.readStringUntil('\n');
     buff += "<option value=\"" + dt + "\">" + dt + "</option>";
   }
-  Serial.println(buff);
-  
   fs.close();
   return buff;
+}
+
+void update_sensor_file(const String sensor_name, const String actuator_name) {
+
+  String fname = "/"+sensor_name + ".txt";
+  File fs = SD.open(fname, FILE_READ);
+
+  if (!fs) {
+    Serial.print(sensor_name);
+    Serial.println(" does not exists");
+  } 
+  else {
+    while (fs.available()) {
+      if ( fs.readStringUntil('\n') == actuator_name)
+        return;
+    }
+    fs.close();
+  }
+
+  File fd = SD.open(fname, FILE_WRITE);
+
+  if (!fd) {
+    Serial.print("failed to create/open ");
+    Serial.print(sensor_name);
+    Serial.println(".txt");
+    return;
+  }
+  fd.println(actuator_name);
+  fd.close();
 }
 
 void Gateway() {
@@ -223,11 +257,24 @@ void Gateway() {
   });
 
   server.on("/pair", HTTP_GET, [](AsyncWebServerRequest * request) {
-
     if (request->hasParam("home")) {
       Serial.println("routing to home...");
       request->send_P(200, "text/html", gateway_html);
     }
+
+    if (request->hasParam("pair")) {
+      Serial.println("\nprova pair:");
+      String sensor = "";
+      String actuator = "";
+      if (request->hasParam("sensori"))
+        sensor = request->getParam("sensori")->value();
+      if (request->hasParam("attuatori"))
+        actuator = request->getParam("attuatori")->value();
+
+      if ( sensor != "" && actuator != "")
+        update_sensor_file(sensor, actuator);
+    }
+    request->send_P(200, "text/html", gateway_html);
   });
 
   // HOME PAGE
