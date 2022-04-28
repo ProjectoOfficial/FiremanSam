@@ -58,18 +58,22 @@ const char pair_html[] PROGMEM = R"rawliteral(
             <div class="col-md-6" >
                 <label class="visually-hidden" for="Sensori">Sensori</label>
                 <br />
-                <select class="form-select" name="cars" id="Sensori">
-                    <option value="volvo">Volvo</option>
-                    <option value="hello">Hello</option>
+                <select class="form-select" name="sensori" id="sensori">
+)rawliteral";
+
+
+const char pair_html2[] PROGMEM = R"rawliteral(
                 </select>
             </div>
 
             <div class="col-md-6">
                 <label class="visually-hidden" for="Attuatori">Attuatori</label>
                 <br />
-                <select class="form-select" name="cars" id="Attuatori">
-                    <option value="volvo">Volvo</option>
-                    <option value="hello">Hello</option>
+                <select class="form-select" name="attuatori" id="attuatori">
+)rawliteral";
+
+
+const char pair_html3[] PROGMEM = R"rawliteral(
                 </select>
             </div>
             <br />

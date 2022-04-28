@@ -202,14 +202,19 @@ void configure() {
  *                                    *************************************
 */
 
-const String populate_gwpage(const String sensors_file, const String actuators_file) {
-  File fs = SD.open(sensors_file, FILE_READ);
-  File fa = SD.open(actuators_file, FILE_READ);
 
-  fa.close();
+String populate_dropdown(const String filename) {
+  File fs = SD.open(filename, FILE_READ);
+  String buff = "";
+  while (fs.available()) {
+    String dt = fs.readStringUntil('\n');
+    buff += "<option value=\"" + dt + "\">" + dt + "</option>";
+  }
+  Serial.println(buff);
+  
   fs.close();
+  return buff;
 }
-
 
 void Gateway() {
   //ROOT PAGE REDIRECT TO SETUP PAGE
@@ -218,7 +223,7 @@ void Gateway() {
   });
 
   server.on("/pair", HTTP_GET, [](AsyncWebServerRequest * request) {
-    
+
     if (request->hasParam("home")) {
       Serial.println("routing to home...");
       request->send_P(200, "text/html", gateway_html);
@@ -234,9 +239,11 @@ void Gateway() {
 
     if (request->hasParam("pair")) {
       Serial.println("routing to accoppia...");
-      request->send_P(200, "text/html", pair_html);
+      String page = pair_html + populate_dropdown(SENSORS_FILE) + pair_html2 + populate_dropdown(ACTUATORS_FILE) + pair_html3;
+      request->send(200, "text/html", page);
     }
   });
+
 }
 
 /*                                    *************************************
