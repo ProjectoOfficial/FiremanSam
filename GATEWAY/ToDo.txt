@@ -1,8 +1,12 @@
 1) creare una funzione download_sensors che se eseguita una volta nel void setup va ad aggiornare il file contenente la lista dei sensori presenti e appartenenti
 	all'INPUT_EMAIL corrente. Il file deve contenere solo i nomi dei sensori, uno per riga.
 
+FATTO
+
 2) creare una funzione download_actuators che se eseguita una volta nel void setup va ad aggiornare il file contenente la lista degli attuatori presenti e appartenenti
 	all'INPUT_EMAIL corrente. Il file deve contenere solo i nomi degli attuatori, uno per riga.
+
+FATTO
 
 3) sviluppare una pagina HTML dove è possibile associare un sensore ad un attuatore. Un sensore può essere associato a più attuatori ma un attuatore può solo essere
 	associato a un sensore. La pagina deve contenere due dropdownbox, una per i sensori e una per gli attuatori, e un pulsante "associa"
