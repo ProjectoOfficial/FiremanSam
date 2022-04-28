@@ -4,6 +4,7 @@
 #include <ESPAsyncWebServer.h>
 #include <FirebaseESP32.h>
 #include "index.h"
+#include "gateway.h"
 
 #define RESET_PIN 4
 #define RED 32
@@ -201,11 +202,11 @@ void configure() {
  *                                    *************************************
 */
 
-const String populate_gwpage(const String sensors_file, const String actuators_file){
-  FILE fs = SD.open(sensors_file, FILE_READ);
-  FILE fa = SD.open(actuators_file, FILE_READ);
+const String populate_gwpage(const String sensors_file, const String actuators_file) {
+  File fs = SD.open(sensors_file, FILE_READ);
+  File fa = SD.open(actuators_file, FILE_READ);
 
-  fa.close(); 
+  fa.close();
   fs.close();
 }
 
@@ -216,8 +217,25 @@ void Gateway() {
     request->send_P(200, "text/html", gateway_html);
   });
 
+  server.on("/pair", HTTP_GET, [](AsyncWebServerRequest * request) {
+    
+    if (request->hasParam("home")) {
+      Serial.println("routing to home...");
+      request->send_P(200, "text/html", gateway_html);
+    }
+  });
+
   // HOME PAGE
   server.on("/gateway", HTTP_GET, [](AsyncWebServerRequest * request) {
+    if (request->hasParam("reset")) {
+      Serial.println("Restarting Gateway ...");
+      ESP.restart();
+    }
+
+    if (request->hasParam("pair")) {
+      Serial.println("routing to accoppia...");
+      request->send_P(200, "text/html", pair_html);
+    }
   });
 }
 
@@ -361,8 +379,8 @@ void devices_extractor(const String str, const String filename) {
 
 void download_devices() {
   /*
-   * @brief retrieves sensors and actuators of a specific user and saves them on two different files
-   */
+     @brief retrieves sensors and actuators of a specific user and saves them on two different files
+  */
   Firebase.getString(fData, input_EMAIL + "/SENSORS/");
   String str = fData.to<String>();
   devices_extractor(str, SENSORS_FILE);
@@ -385,16 +403,16 @@ void reset_monitor()
      @brief this function monitors the reset button which
             brings the device back to factory state
   */
-  if (digitalRead(RESET_PIN)){
+  if (digitalRead(RESET_PIN)) {
     if (millis() - start_reset > RESET_DELAY) {
-      for (int i = 0; i < 10; i++){
+      for (int i = 0; i < 10; i++) {
         digitalWrite(BLUE, !digitalRead(BLUE));
         delay(100);
       }
       Serial.println("Gateway reset successfully");
       SD.remove(CONFIG_FILE);
     }
-  } else 
+  } else
     start_reset = millis();
 }
 
@@ -424,7 +442,7 @@ void setup() {
     Serial.println("SD Card error, cannot proceed");
     while (true)
       reset_monitor();
-    
+
   }
 
   if (SD_get_data() < 0)
@@ -460,8 +478,8 @@ void setup() {
     unsigned long start_time = millis();
     unsigned long dot_time = millis();
 
-    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()){
-      if (dot_time + 2000 < millis()){
+    while ((WiFi.status() != WL_CONNECTED) && (start_time + CONNECT_TIME) > millis()) {
+      if (dot_time + 2000 < millis()) {
         Serial.print(".");
         dot_time = millis();
       }
@@ -471,7 +489,7 @@ void setup() {
     }
     Serial.println("");
 
-    if (WiFi.status() != WL_CONNECTED){
+    if (WiFi.status() != WL_CONNECTED) {
       Serial.println(" cannot connect to WiFi!");
       while (true)
         reset_monitor();
