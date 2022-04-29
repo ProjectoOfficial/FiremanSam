@@ -29,10 +29,58 @@ const char gateway_html[] PROGMEM = R"rawliteral(
         </form>
         <br/>
     </div>
+)rawliteral";
+
+const char gateway2_html[] PROGMEM = R"rawliteral(
   </body>
 </html>
 )rawliteral";
 
+const char sensor_html[] PROGMEM = R"rawliteral(
+  <div style="text-align: center; margin: 0 auto;" class="container">
+    <div class="row">
+      <div class="col">
+        <p> Sensor: 
+
+)rawliteral";
+
+
+const char sensor2_html[] PROGMEM = R"rawliteral(
+        </p>
+      </div>
+      <div class="col">
+        <p> Actuator: 
+
+)rawliteral";
+
+
+const char sensor3_html[] PROGMEM = R"rawliteral(
+        </p>
+      </div>
+    </div>
+
+)rawliteral";
+
+
+const char sensornomore_html[] PROGMEM = R"rawliteral(
+  </div>
+)rawliteral";
+
+const char sensor4_html[] PROGMEM = R"rawliteral(
+
+    <div class="row">
+      <div class="col"></div>
+        <div class="col">
+          <p> Actuator:
+)rawliteral";
+
+const char sensor5_html[] PROGMEM = R"rawliteral(
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+)rawliteral";
 
 const char pair_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -45,7 +93,7 @@ const char pair_html[] PROGMEM = R"rawliteral(
     
     </head>
     <body>
-        <div >
+        <div style="text-align: center; margin: 0 auto;">
           <h1>Home</h1>
             <br/>
             <form action="/pair">
@@ -78,6 +126,7 @@ const char pair_html3[] PROGMEM = R"rawliteral(
             </div>
             <br />
             <button style="text-align: center; margin: 0 auto;" id="pair" name="pair" type="submit" class="btn btn-primary">Pair</button>
+            <button style="text-align: center; margin: 0 auto;" id="unpair" name="unpair" type="submit" class="btn btn-primary">Unpair</button>
         </form>
 
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

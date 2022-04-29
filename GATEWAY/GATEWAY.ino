@@ -201,8 +201,6 @@ void configure() {
  ***************************************             GATEWAY            **********************************************
  *                                    *************************************
 */
-
-
 String populate_dropdown(const String filename) {
   File fs = SD.open(filename, FILE_READ);
 
@@ -221,9 +219,9 @@ String populate_dropdown(const String filename) {
   return buff;
 }
 
-void update_sensor_file(const String sensor_name, const String actuator_name) {
+void update_sensor_add(const String sensor_name, const String actuator_name) {
 
-  String fname = "/"+sensor_name + ".txt";
+  String fname = "/" + sensor_name + ".txt";
   File fs = SD.open(fname, FILE_READ);
 
   if (!fs) {
@@ -232,7 +230,7 @@ void update_sensor_file(const String sensor_name, const String actuator_name) {
   } 
   else {
     while (fs.available()) {
-      if ( fs.readStringUntil('\n') == actuator_name)
+      if (fs.readStringUntil('\n') == actuator_name)
         return;
     }
     fs.close();
@@ -250,20 +248,149 @@ void update_sensor_file(const String sensor_name, const String actuator_name) {
   fd.close();
 }
 
+void update_sensor_remove(const String sensor_name, const String actuator_name){
+  String fname = "/" + sensor_name + ".txt";
+  String tname = "/temp.txt";
+
+  File fs = SD.open(fname, FILE_READ);
+  File tmp = SD.open(tname, FILE_WRITE);
+
+  if (!fs) {
+    Serial.print(sensor_name);
+    Serial.println(" file open error or error during tmp file creation");
+    return;
+  } 
+
+  if(!tmp){
+    Serial.println("error during tmp file creation");
+    return;
+  }
+
+  while (fs.available()) {
+    String line = fs.readStringUntil('\n');
+    if (line != actuator_name)
+      tmp.println(line);
+  }
+  
+  fs.close();
+  SD.remove(fname);
+
+  if(tmp.size() == 0){
+    tmp.close();
+    SD.remove(tname);
+    return;
+  }
+  tmp.close();
+
+  File fd = SD.open(fname, FILE_WRITE);
+  File tmp2 = SD.open(tname, FILE_READ);
+
+   if (!fs) {
+    Serial.print(sensor_name);
+    Serial.println(" file open error");
+    return;
+  } 
+
+  if(!tmp2){
+    Serial.println("error during tmp2 file open");
+    return;
+  }
+
+  while (tmp2.available()) 
+    fd.println(tmp2.readStringUntil('\n'));
+
+  fd.close();
+  tmp2.close();
+  
+}
+
+String get_sensor_files(){
+  String buff = "";
+  String separator = ";";
+
+  File root = SD.open("/");
+
+  if(!root){
+    return buff;
+  }
+
+  while(true){
+    File entry = root.openNextFile();
+
+    if(!entry)
+      break;
+
+    if(!entry.isDirectory()){
+      String fname = entry.name();
+      if(fname == CONFIG_FILE || fname == SENSORS_FILE || fname == ACTUATORS_FILE)
+        continue;
+
+      buff += fname + separator;
+    }
+    entry.close();
+  }
+
+  root.close();
+  return buff;
+}
+
+String get_pair_box(String files){
+  int last_index = 0;
+  String out = "";
+
+  while(true){
+    int index = files.indexOf(";", last_index);
+    
+    if(index == -1)
+      break;
+
+    String file = files.substring(last_index, index);
+    Serial.println(file);
+
+    File fs = SD.open(file, FILE_READ);
+
+    if(fs){
+      uint8_t n_act = 0;
+      while(fs.available()){
+        String dt = fs.readStringUntil('\n');
+
+        if(n_act == 0)
+          out += sensor_html + file + sensor2_html + dt + sensor3_html;
+        else
+          out += sensor4_html + dt + sensor5_html;
+        ++n_act;
+      }
+
+      if(n_act == 1)
+        out += sensornomore_html;
+
+      fs.close(); 
+    }    
+    last_index = index + 1;
+  } 
+  return out;
+}
+
 void Gateway() {
   //ROOT PAGE REDIRECT TO SETUP PAGE
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/html", gateway_html);
+    String files = get_sensor_files();
+    Serial.println(files);
+    String gw = get_pair_box(files);
+    request->send(200, "text/html", gateway_html + gw + gateway2_html);
   });
 
   server.on("/pair", HTTP_GET, [](AsyncWebServerRequest * request) {
     if (request->hasParam("home")) {
       Serial.println("routing to home...");
-      request->send_P(200, "text/html", gateway_html);
+      
+      String files = get_sensor_files();
+      Serial.println(files);
+      String gw = get_pair_box(files);
+      request->send(200, "text/html", gateway_html + gw + gateway2_html);
     }
 
     if (request->hasParam("pair")) {
-      Serial.println("\nprova pair:");
       String sensor = "";
       String actuator = "";
       if (request->hasParam("sensori"))
@@ -271,10 +398,27 @@ void Gateway() {
       if (request->hasParam("attuatori"))
         actuator = request->getParam("attuatori")->value();
 
-      if ( sensor != "" && actuator != "")
-        update_sensor_file(sensor, actuator);
+      if (sensor != "" && actuator != "")
+        update_sensor_add(sensor, actuator);
     }
-    request->send_P(200, "text/html", gateway_html);
+
+    if (request->hasParam("unpair")) {
+      String sensor = "";
+      String actuator = "";
+      if (request->hasParam("sensori"))
+        sensor = request->getParam("sensori")->value();
+      if (request->hasParam("attuatori"))
+        actuator = request->getParam("attuatori")->value();
+        
+      if (sensor != "" && actuator != "")
+        update_sensor_remove(sensor, actuator);
+
+    }
+    
+    String files = get_sensor_files();
+    Serial.println(files);
+    String gw = get_pair_box(files);
+    request->send(200, "text/html", gateway_html + gw + gateway2_html);
   });
 
   // HOME PAGE
@@ -290,7 +434,6 @@ void Gateway() {
       request->send(200, "text/html", page);
     }
   });
-
 }
 
 /*                                    *************************************
