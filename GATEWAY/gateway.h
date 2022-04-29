@@ -13,8 +13,10 @@ const char gateway_html[] PROGMEM = R"rawliteral(
   </head>
 
   <body>
+  <h1 class="h1" style="text-align: center; margin: 0 auto;">Gateway home page</h1>
+  <br />
     <div style="text-align: center; margin: 0 auto;">
-      <h1>Reset device</h1>
+      <h1 class="h3">Reset device</h1>
         <br/>
         <form action="/gateway">
           <button style="text-align: center; margin: 0 auto;" type="submit" id="reset" name="reset" class="btn btn-primary">Reset</button>
@@ -22,13 +24,17 @@ const char gateway_html[] PROGMEM = R"rawliteral(
         <br/>
     </div>
     <div style="text-align: center; margin: 0 auto;">
-      <h1>Pair</h1>
+      <h1 class="h3">Pair</h1>
         <br/>
         <form action="/gateway">
           <button style="text-align: center; margin: 0 auto;" type="submit" id="pair" name="pair" class="btn btn-primary">Pair</button>
         </form>
-        <br/>
     </div>
+    
+    <br />
+    <br />
+
+    <h1 class="h3" style="text-align: center; margin: 0 auto;">Pairs</h1>
 )rawliteral";
 
 const char gateway2_html[] PROGMEM = R"rawliteral(
@@ -36,52 +42,58 @@ const char gateway2_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
-const char sensor_html[] PROGMEM = R"rawliteral(
-  <div style="text-align: center; margin: 0 auto;" class="container">
-    <div class="row">
-      <div class="col">
-        <p> Sensor: 
 
+// SENSOR DISPLAY
+const char sensor_html[] PROGMEM = R"rawliteral(
+  <table style="text-align: center; margin: 0 auto; width: 65%;" class="table table-borderless bg-light">
+    <tbody>
+      <tr>
+        <td class="align-middle">
+          <span class="text-info align-middle"> Sensor: 
 )rawliteral";
 
 
 const char sensor2_html[] PROGMEM = R"rawliteral(
-        </p>
-      </div>
-      <div class="col">
-        <p> Actuator: 
+          </span>
+        </td>
 
+        <td class="align-middle">
+          <span class="text-info align-middle"> Actuator:
 )rawliteral";
 
 
 const char sensor3_html[] PROGMEM = R"rawliteral(
-        </p>
-      </div>
-    </div>
-
+        </td>
+      </tr>
 )rawliteral";
 
 
 const char sensornomore_html[] PROGMEM = R"rawliteral(
-  </div>
+    </tbody>
+  </table>
+  <br />
 )rawliteral";
 
 const char sensor4_html[] PROGMEM = R"rawliteral(
 
-    <div class="row">
-      <div class="col"></div>
-        <div class="col">
-          <p> Actuator:
+      <tr>
+        <td class="align-middle">
+          <span class="text-info align-middle"></span>
+        </td>
+        <td class="align-middle">
+          <span class="text-info align-middle"> Actuator:
 )rawliteral";
 
 const char sensor5_html[] PROGMEM = R"rawliteral(
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <br />
 )rawliteral";
 
+// PAIRING
 const char pair_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>

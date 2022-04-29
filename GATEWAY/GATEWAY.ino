@@ -257,7 +257,7 @@ void update_sensor_remove(const String sensor_name, const String actuator_name){
 
   if (!fs) {
     Serial.print(sensor_name);
-    Serial.println(" file open error or error during tmp file creation");
+    Serial.println(" file open error");
     return;
   } 
 
@@ -622,6 +622,14 @@ const String splitString(const String str) {
   String buff = str;
   return buff.substring(0, buff.indexOf('@'));
 }
+
+
+/*                                    *************************************
+ ***************************************       SENSOR TO ACTUATOR       **********************************************
+ *                                    *************************************
+*/
+
+
 
 
 /*                                    *************************************
