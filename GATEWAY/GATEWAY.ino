@@ -1,8 +1,8 @@
-#include <Arduino.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <FirebaseESP32.h>
+
 #include "index.h"
 #include "gateway.h"
 
@@ -48,16 +48,12 @@ unsigned long start_reset;
 
 // *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
 
-// Insert Firebase project API Key
+#define FIREBASE_HOST "https://firemansam-459c0-default-rtdb.europe-west1.firebasedatabase.app/"
 #define FIREBASE_AUTH "7i1dpSEfmefSNWJ9BZr26QW78gtCuSbbN8vUCAz7"
 
-// Insert RTDB URLefine the RTDB URL */
-#define FIREBASE_HOST "https://firemansam-459c0-default-rtdb.europe-west1.firebasedatabase.app/"
-
 //Define Firebase Data objects
-FirebaseData fData;
+FirebaseData fbdo;
 FirebaseJson json;
-
 
 unsigned long updateTime = 0;
 /*                                    *************************************
@@ -202,12 +198,17 @@ void configure() {
  *                                    *************************************
 */
 String populate_dropdown(const String filename) {
+  /*
+   * @brief populates the dropdownlist for devices pairing
+   *
+   * @param filename the file used for extracting the devices 
+  */
   File fs = SD.open(filename, FILE_READ);
 
   if (!fs) {
     Serial.print("failed to open ");
     Serial.println(filename);
-    while (1);
+    return "";
   }
 
   String buff = "";
@@ -220,7 +221,12 @@ String populate_dropdown(const String filename) {
 }
 
 void update_sensor_add(const String sensor_name, const String actuator_name) {
-
+  /*
+   * @brief adds an actuator to a specific sensor file
+   *
+   * @param sensor_name the sensor to pair with the actuator, it should have its own file
+   * @param actuator_name the name of the actuator to be inserted into sensor file for pairing
+  */
   String fname = "/" + sensor_name + ".txt";
   File fs = SD.open(fname, FILE_READ);
 
@@ -249,6 +255,13 @@ void update_sensor_add(const String sensor_name, const String actuator_name) {
 }
 
 void update_sensor_remove(const String sensor_name, const String actuator_name){
+  /*
+   * @brief removes an actuator to a specific sensor file
+   *
+   * @param sensor_name the sensor to unpair with the actuator, it should have its own file
+   * @param actuator_name the name of the actuator to be removed from sensor file 
+  */
+
   String fname = "/" + sensor_name + ".txt";
   String tname = "/temp.txt";
 
@@ -301,10 +314,14 @@ void update_sensor_remove(const String sensor_name, const String actuator_name){
 
   fd.close();
   tmp2.close();
+  SD.remove(tname);
   
 }
 
 String get_sensor_files(){
+  /*
+   * @brief returns a string containing only sensor filenames separated by ;
+  */
   String buff = "";
   String separator = ";";
 
@@ -335,6 +352,11 @@ String get_sensor_files(){
 }
 
 String get_pair_box(String files){
+  /*
+   * @brief prepares an html table for each sensor paired with one or more actuators, to be displayed on the webserver
+   *
+   * @param files contains each sensor file which is used for actuator name retrieving
+  */
   int last_index = 0;
   String out = "";
 
@@ -345,7 +367,6 @@ String get_pair_box(String files){
       break;
 
     String file = files.substring(last_index, index);
-    Serial.println(file);
 
     File fs = SD.open(file, FILE_READ);
 
@@ -372,7 +393,11 @@ String get_pair_box(String files){
 }
 
 void Gateway() {
-  //ROOT PAGE REDIRECT TO SETUP PAGE
+  /*
+   * @brief manages the gateway webserver 
+  */
+ 
+ // REDIRECT
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     String files = get_sensor_files();
     Serial.println(files);
@@ -380,6 +405,7 @@ void Gateway() {
     request->send(200, "text/html", gateway_html + gw + gateway2_html);
   });
 
+  // PAIRING PAGE
   server.on("/pair", HTTP_GET, [](AsyncWebServerRequest * request) {
     if (request->hasParam("home")) {
       Serial.println("routing to home...");
@@ -576,15 +602,15 @@ void devices_extractor(const String str, const String filename) {
 
 void download_devices() {
   /*
-     @brief retrieves sensors and actuators of a specific user and saves them on two different files
+   * @brief retrieves sensors and actuators of a specific user and saves them on two different files
   */
-  Firebase.getString(fData, input_EMAIL + "/SENSORS/");
-  String str = fData.to<String>();
+  Firebase.getString(fbdo, input_EMAIL + "/SENSORS/");
+  String str = fbdo.to<String>();
   devices_extractor(str, SENSORS_FILE);
   Serial.println(str);
 
-  Firebase.getString(fData, input_EMAIL + "/ACTUATORS/");
-  str = fData.to<String>();
+  Firebase.getString(fbdo, input_EMAIL + "/ACTUATORS/");
+  str = fbdo.to<String>();
   devices_extractor(str, ACTUATORS_FILE);
   Serial.println(str);
 }
@@ -597,8 +623,7 @@ void download_devices() {
 void reset_monitor()
 {
   /*
-     @brief this function monitors the reset button which
-            brings the device back to factory state
+   * @brief this function monitors the reset button which brings the device back to factory state
   */
   if (digitalRead(RESET_PIN)) {
     if (millis() - start_reset > RESET_DELAY) {
@@ -619,6 +644,9 @@ void reset_monitor()
 */
 
 const String splitString(const String str) {
+  /*
+   * @brief it is used for removing the @ from the inserted email (@ creates problems with firebase) 
+  */
   String buff = str;
   return buff.substring(0, buff.indexOf('@'));
 }
@@ -629,8 +657,43 @@ const String splitString(const String str) {
  *                                    *************************************
 */
 
+void check_fire(){
+  String files = get_sensor_files();
 
+  int last_index = 0;
+  String out = "";
 
+  while(true){
+    int index = files.indexOf(";", last_index);
+    
+    if(index == -1)
+      break;
+
+    String file = files.substring(last_index, index);
+    
+    int bracket_idx = file.indexOf("/");
+    int dot_idx = file.indexOf(".");
+    String sensor = file.substring(bracket_idx + 1, dot_idx);
+
+    File fs = SD.open(file, FILE_READ);
+
+    if(fs){
+      Firebase.getInt(fbdo,  input_EMAIL + "/SENSORS/" + sensor + "/score");
+      int score = fbdo.to<int>();
+
+      while(fs.available()){
+        String actuator = fs.readStringUntil('\n');
+        
+        if(score > 0){
+          String updateStr = input_EMAIL + "/ACTUATORS/" + actuator.substring(0, actuator.indexOf("\r")) + "/alarm";
+          Firebase.setInt(fbdo, updateStr, 1);
+        }
+      }
+      fs.close();
+    }    
+    last_index = index + 1;
+  } 
+}
 
 /*                                    *************************************
  ***************************************          VOID SETUP            **********************************************
@@ -647,7 +710,6 @@ void setup() {
     Serial.println("SD Card error, cannot proceed");
     while (true)
       reset_monitor();
-
   }
 
   if (SD_get_data() < 0)
@@ -671,6 +733,9 @@ void setup() {
   }
   else {
     // LET GATEWAY START ITS JOB
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+
     Serial.print("Attempting to connect to ");
     Serial.print(input_SSID);
 
@@ -710,12 +775,13 @@ void setup() {
     server.begin();
 
     //***************************FIREBASE INITIALIZATION************************
+
     Serial.println("Starting Firebase Communication:\n");
+    
     Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
     Firebase.reconnectWiFi(true);
-    Firebase.setReadTimeout(fData, 1000 * 60);
-    Firebase.setwriteSizeLimit(fData, "tiny");
-    delay(1000);
+    Firebase.setReadTimeout(fbdo, 1000 * 60);
+    Firebase.setwriteSizeLimit(fbdo, "tiny");
 
     download_devices();
     updateTime = millis();
@@ -731,25 +797,9 @@ void loop() {
     digitalWrite(BLUE, HIGH);
     digitalWrite(RED, HIGH);
     if (millis() - updateTime > 300)
-    { /*
-        //tienes el calor
-        json.set("/alarm", 1);
-
-        //SCRITTURA
-        // Al posto di prova ci va l'attuatore al quale va aggiornato il valore
-        //Firebase.updateNode(fData, input_EMAIL+ "/" + "ACTUATORS" + "/"+ "PROVA", json);
-        Firebase.updateNode(fData, "Daniel_r/ACTUATORS/Mansarda", json);
-
-        json.set("/score", -1);
-        Firebase.updateNode(fData, "Daniel_r/SENSORS/Mansarda", json);
-
-        //LETTURA
-        //Firebase.getBool(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + "Mansarda" + "/alarm");
-        Firebase.getBool(fData, "Daniel_r/ACTUATORS/Mansarda/alarm");
-        bool AlarmValue = fData.to<bool>();
-
-        Serial.println(AlarmValue);*/
-
+    { 
+      
+      check_fire();
       updateTime = millis();
     }
     reset_monitor();

@@ -19,6 +19,8 @@
  *                                    *************************************
 */
 
+#define RESET_ALARM 500
+
 #define FIREBASE_HOST "https://firemansam-459c0-default-rtdb.europe-west1.firebasedatabase.app/"
 #define FIREBASE_AUTH "7i1dpSEfmefSNWJ9BZr26QW78gtCuSbbN8vUCAz7"
 
@@ -26,6 +28,7 @@ FirebaseData fData;
 FirebaseJson json;
 
 unsigned long updateTime = 0;
+unsigned long reset_alarmTime = 0;
 
 /*                                    *************************************
  ***************************************    WEBSERVER CONFIGURATION      **********************************************
@@ -297,6 +300,21 @@ void setup() {
   delay(DELAYTIME);
 }
 
+void reset_alarm(){
+  if (digitalRead(RESET_PIN)) {
+    if (millis() - reset_alarmTime < RESET_ALARM) {
+      for (int i = 0; i < 3; i++) {
+        digitalWrite(LED, !digitalRead(LED));
+        delay(300);
+      }
+      json.set("/alarm", 0);
+      Firebase.updateNode(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + input_DEVICE, json);
+    }
+  } else {
+    reset_alarmTime = millis();
+  }
+}
+
 /*                                    *************************************
  ***************************************         RESET MONITOR           **********************************************
  *                                    *************************************
@@ -305,7 +323,7 @@ void setup() {
 void reset_monitor() {
   /*
      @brief this function monitors the reset button which
-            brings the device back to factory state
+            brings the device back to factory state if hold for at least 3 seconds
   */
   if (digitalRead(RESET_PIN)) {
     if (millis() - start_reset > RESET_DELAY) {
@@ -328,8 +346,8 @@ void loop()
 {
   if (!CONFIGURATE) {
     if (millis() - updateTime > 300) {
-      Firebase.getBool(fData, splitString(input_EMAIL) + "/" + "ACTUATORS" + "/" + input_DEVICE + "/alarm");
-      bool AlarmValue = fData.to<bool>();
+      Firebase.getInt(fData, splitString(input_EMAIL) + "/" + "ACTUATORS" + "/" + input_DEVICE + "/alarm");
+      int AlarmValue = fData.to<int>();
 
       Serial.println(AlarmValue);
 
@@ -348,6 +366,7 @@ void loop()
       }
       updateTime = millis();
     }
+    reset_alarm();
     reset_monitor();
   }
   else {
