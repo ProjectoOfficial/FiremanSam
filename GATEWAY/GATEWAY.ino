@@ -7,14 +7,14 @@
 #include "gateway.h"
 
 #define RESET_PIN 4
-#define RED 32
-#define GREEN 35 // modificare hardware pin verde e blu perché questi GPIO sono solo input
-#define BLUE 34
+#define RED 27
+#define GREEN 26
+#define BLUE 32
 
 #define BLINK_TIME 500
 unsigned long timeBlink = millis();
 
-void led_blink()
+void led_blink(const int pin)
 {
   /*
      @brief it is used for showing to the user that the device
@@ -22,12 +22,44 @@ void led_blink()
   */
   if (millis() - timeBlink > BLINK_TIME)
   {
-    digitalWrite(BLUE, !digitalRead(BLUE));
+    if(pin != BLUE) digitalWrite(BLUE, LOW);
+    if(pin != RED) digitalWrite(RED, LOW);
+    if(pin != GREEN) digitalWrite(GREEN, LOW);
+
+    digitalWrite(pin, !digitalRead(pin));
     timeBlink = millis();
   }
 }
 
-//***********************SD CARD CONFIGURATION********************
+void light_led(const int pin){
+  /*
+   * @brief turns on one led color channel per time
+   * 
+   * @param pin the led pin to be turned on 
+  */
+  if(pin == BLUE){
+    digitalWrite(RED, LOW);
+    digitalWrite(GREEN, LOW);
+    digitalWrite(BLUE, HIGH);
+  }
+
+  if(pin == RED){
+    digitalWrite(BLUE, LOW);
+    digitalWrite(GREEN, LOW);
+    digitalWrite(RED, HIGH);
+  }
+
+  if(pin == GREEN){
+    digitalWrite(RED, LOW);
+    digitalWrite(BLUE, LOW);
+    digitalWrite(GREEN, HIGH);
+  }
+}
+
+/*                                    *************************************
+ ***************************************            SD CARD             **********************************************
+ *                                    *************************************
+*/
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
@@ -46,7 +78,47 @@ const String ACTUATORS_FILE = "/actuators.txt";
 unsigned long start_reset;
 
 
-// *********************FIREBASE DATABASE CREDENTIALS AND OBJECTS******************
+/*                                    *************************************
+ ***************************************         RESET MONITOR           **********************************************
+ *                                    *************************************
+*/
+
+void reset_monitor()
+{
+  /*
+   * @brief this function monitors the reset button which brings the device back to factory state
+  */
+  if (digitalRead(RESET_PIN)) {
+    if (millis() - start_reset > RESET_DELAY) {
+      for (int i = 0; i < 10; i++) {
+        digitalWrite(BLUE, !digitalRead(BLUE));
+        delay(100);
+      }
+      Serial.println("Gateway reset successfully");
+      SD.remove(CONFIG_FILE);
+    }
+  } else
+    start_reset = millis();
+}
+
+/*                                    *************************************
+ ***************************************         STRING SPLIT           **********************************************
+ *                                    *************************************
+*/
+
+const String splitString(const String str) {
+  /*
+   * @brief it is used for removing the @ from the inserted email (@ creates problems with firebase) 
+  */
+  String buff = str;
+  return buff.substring(0, buff.indexOf('@'));
+}
+
+
+/*                                    *************************************
+ ***************************************             FIREBASE           **********************************************
+ *                                    *************************************
+*/
 
 #define FIREBASE_HOST "https://firemansam-459c0-default-rtdb.europe-west1.firebasedatabase.app/"
 #define FIREBASE_AUTH "7i1dpSEfmefSNWJ9BZr26QW78gtCuSbbN8vUCAz7"
@@ -615,41 +687,6 @@ void download_devices() {
   Serial.println(str);
 }
 
-/*                                    *************************************
- ***************************************         RESET MONITOR           **********************************************
- *                                    *************************************
-*/
-
-void reset_monitor()
-{
-  /*
-   * @brief this function monitors the reset button which brings the device back to factory state
-  */
-  if (digitalRead(RESET_PIN)) {
-    if (millis() - start_reset > RESET_DELAY) {
-      for (int i = 0; i < 10; i++) {
-        digitalWrite(BLUE, !digitalRead(BLUE));
-        delay(100);
-      }
-      Serial.println("Gateway reset successfully");
-      SD.remove(CONFIG_FILE);
-    }
-  } else
-    start_reset = millis();
-}
-
-/*                                    *************************************
- ***************************************         STRING SPLIT           **********************************************
- *                                    *************************************
-*/
-
-const String splitString(const String str) {
-  /*
-   * @brief it is used for removing the @ from the inserted email (@ creates problems with firebase) 
-  */
-  String buff = str;
-  return buff.substring(0, buff.indexOf('@'));
-}
 
 
 /*                                    *************************************
@@ -708,7 +745,8 @@ void setup() {
 
   if (SDCard_Setup() < 0) {
     Serial.println("SD Card error, cannot proceed");
-    while (true)
+    light_led(RED);
+    while (1)
       reset_monitor();
   }
 
@@ -721,6 +759,9 @@ void setup() {
       WiFi.softAP(ssid_AP, password_AP);
       if (!WiFi.softAPConfig(local_IP, local_IP, subnet)) {
         Serial.println("STA Failed to configure");
+        light_led(RED);
+        while(1)
+          reset_monitor();
       }
       IPAddress IP = WiFi.softAPIP();
       Serial.print("Access Point IP address: ");
@@ -741,6 +782,9 @@ void setup() {
 
     if (!WiFi.config(Gateway_IP, Router_IP, Subnet, primaryDNS, secondaryDNS)) {
       Serial.println("STA Failed to configure");
+      light_led(RED);
+      while(1)
+        reset_monitor();
     }
 
     WiFi.begin((char *) input_SSID.c_str(), (char *) input_PASSWORD.c_str());
@@ -761,7 +805,8 @@ void setup() {
 
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println(" cannot connect to WiFi!");
-      while (true)
+        light_led(RED);
+      while (1)
         reset_monitor();
     }
 
@@ -785,25 +830,25 @@ void setup() {
 
     download_devices();
     updateTime = millis();
+    light_led(GREEN);
   }
 }
 
 
-// **************************VOID LOOP****************************
+/*                                    *************************************
+ ***************************************            VOID LOOP           **********************************************
+ *                                    *************************************
+*/
 void loop() {
   if (!CONFIGURATE)
   {
-    digitalWrite(GREEN, HIGH);
-    digitalWrite(BLUE, HIGH);
-    digitalWrite(RED, HIGH);
     if (millis() - updateTime > 300)
-    { 
-      
+    {  
       check_fire();
       updateTime = millis();
     }
     reset_monitor();
   }
   else
-    led_blink();
+    led_blink(BLUE);
 }
