@@ -743,6 +743,10 @@ void setup() {
   pinMode(GREEN, OUTPUT);
   pinMode(RED, OUTPUT);
 
+  digitalWrite(BLUE, LOW);
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+
   if (SDCard_Setup() < 0) {
     Serial.println("SD Card error, cannot proceed");
     light_led(RED);

@@ -34,7 +34,7 @@ const char setup_html[] PROGMEM = R"rawliteral(
     </head>
   <body>
     <form action="/setup" class="box" id="my-form">
-      <h1 class="display-1">Fire Detector Configuration</h1>
+      <h1 class="display-1">Actuator Configuration</h1>
       <div class="part">
         <input name="ssid" type="text" placeholder="WiFi SSID">
       </div>
