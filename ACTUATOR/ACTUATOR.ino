@@ -293,7 +293,7 @@ void setup() {
     Firebase.setwriteSizeLimit(fData, "tiny");
 
     json.set("/alarm", 0);
-    Firebase.updateNode(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + input_DEVICE, json);
+    Firebase.updateNode(fData, splitString(input_EMAIL) + "/" + "ACTUATORS" + "/" + input_DEVICE, json);
 
     updateTime = millis();
   }
@@ -308,7 +308,7 @@ void reset_alarm(){
         delay(300);
       }
       json.set("/alarm", 0);
-      Firebase.updateNode(fData, input_EMAIL + "/" + "ACTUATORS" + "/" + input_DEVICE, json);
+      Firebase.updateNode(fData, splitString(input_EMAIL) + "/" + "ACTUATORS" + "/" + input_DEVICE, json);
     }
   } else {
     reset_alarmTime = millis();
