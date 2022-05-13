@@ -715,12 +715,14 @@ void check_fire(){
     File fs = SD.open(file, FILE_READ);
 
     if(fs){
-      Firebase.getInt(fbdo,  input_EMAIL + "/SENSORS/" + sensor + "/score");
-      int score = fbdo.to<int>();
+      Firebase.getFloat(fbdo,  input_EMAIL + "/SENSORS/" + sensor + "/score");
+      float score = fbdo.to<float>();
 
       while(fs.available()){
         String actuator = fs.readStringUntil('\n');
-        
+        Serial.println(sensor);
+        Serial.println(actuator);
+        Serial.println(score);
         if(score > 0){
           String updateStr = input_EMAIL + "/ACTUATORS/" + actuator.substring(0, actuator.indexOf("\r")) + "/alarm";
           Firebase.setInt(fbdo, updateStr, 1);
